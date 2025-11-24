@@ -14,15 +14,29 @@ public class GameController {
 
     public void handleCellClick(Cell cell) {
         GameManager gm = GameManager.getInstance();
+        
+        // Cegah input jika game sudah selesai
+        if (gm.isGameOver()) {
+            System.out.println("Game sudah berakhir.");
+            return;
+        }
+
         Player currentPlayer = gm.getCurrentPlayer();
 
         // Validasi Move
         if (cell.getOwner() == null || cell.getOwner().equals(currentPlayer)) {
-            // Eksekusi Logika
+            
+            // 1. Eksekusi Logika (akan memicu rekursi Strategy Pattern)
             cell.addOrb(currentPlayer, gm.getBoard());
 
-            // Ganti Giliran
-            gm.nextTurn();
+            // 2. Cek Status Game (Eliminasi & Win Condition) - FR-4.1 & FR-4.2
+            gm.checkGameStatus();
+
+            // 3. Ganti Giliran (jika game belum berakhir)
+            if (!gm.isGameOver()) {
+                gm.nextTurn();
+                // Notifikasi ke UI bahwa giliran berubah (Observer Pattern di GameManager bisa digunakan di sini)
+            }
 
             // Beritahu UI kalau giliran berubah
             if (onTurnChanged != null) {
@@ -30,7 +44,7 @@ public class GameController {
             }
             
         } else {
-            System.out.println("Invalid Move! Cell owned by " + cell.getOwner().getName());
+            System.out.println("Invalid Move!");
         }
     }
 }
