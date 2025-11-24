@@ -13,7 +13,6 @@ public class GameManager {
     private Board board;
     private List<Player> players;
     private int currentPlayerIndex;
-    private int turnCounter; // Tambahan: Menghitung giliran
 
     private GameManager() {
         // Private Constructor
@@ -29,7 +28,6 @@ public class GameManager {
     public void initializeGame(int width, int height, int numPlayers) {
         board = new Board(width, height);
         players = new ArrayList<>();
-        turnCounter = 1; // Mulai dari giliran 1
 
         // Setup Players (Warna disesuaikan agar kontras dengan mode gelap)
         Color[] colors = {Color.RED, Color.LIME, Color.CYAN, Color.YELLOW};
@@ -42,9 +40,6 @@ public class GameManager {
     public void nextTurn() {
         // Logika rotasi pemain sederhana
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        
-        // Tambahkan counter giliran
-        turnCounter++;
         
         // Note: Di sini nanti bisa ditambahkan logika skip pemain yang sudah kalah (isActive == false)
     }
@@ -69,10 +64,6 @@ public class GameManager {
 
     public List<Player> getPlayers() { // Getter untuk list pemain
         return players;
-    }
-
-    public int getTurnNumber() { // Getter Turn Number
-        return turnCounter;
     }
 
     public Board getBoard() { return board; }
