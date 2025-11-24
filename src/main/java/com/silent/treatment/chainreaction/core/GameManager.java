@@ -35,7 +35,7 @@ public class GameManager {
         List<Player> defaultPlayers = new ArrayList<>();
         Color[] colors = {Color.RED, Color.LIME, Color.CYAN, Color.YELLOW};
         for (int i = 0; i < numPlayers; i++) {
-            defaultPlayers.add(new Player(i, "Player " + (i+1), colors[i % 4]));
+            defaultPlayers.add(new Player("Player " + (i+1), colors[i % 4]));
         }
         initializeGame(width, height, defaultPlayers);
     }

@@ -217,7 +217,7 @@ public class SetupView extends StackPane {
                 HBox row = (HBox) node;
                 TextField tf = (TextField) row.getChildren().get(1);
                 ColorPicker cp = (ColorPicker) row.getChildren().get(2);
-                players.add(new Player(id++, tf.getText(), cp.getValue()));
+                players.add(new Player(tf.getText(), cp.getValue()));
             }
         }
         onStartGame.accept(new GameConfig(w, h, players));
