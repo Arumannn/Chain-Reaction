@@ -47,7 +47,20 @@ public class Board {
         return neighbors;
     }
 
+    public int getPlayerOrbCount(Player player) {
+    int count = 0;
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            if (grid[i][j].getOwner() != null && grid[i][j].getOwner().equals(player)) {
+                count += grid[i][j].getOrbs(); // Atau count++ jika yang dihitung jumlah sel, bukan total orb
+            }
+        }
+    }
+    return count;
+}
+
     public Cell getCell(int x, int y) { return grid[x][y]; }
     public int getWidth() { return width; }
     public int getHeight() { return height; }
+    
 }

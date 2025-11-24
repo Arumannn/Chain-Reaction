@@ -3,21 +3,19 @@ package com.silent.treatment.chainreaction.model;
 import javafx.scene.paint.Color;
 
 public class Player {
-    private final int id;
-    private final String name;
-    private final Color color;
-    private boolean isActive;
+    private String name;
+    private Color color;
+    private boolean isAlive;
 
-    public Player(int id, String name, Color color) {
-        this.id = id;
+    public Player(String name, Color color) {
         this.name = name;
         this.color = color;
-        this.isActive = true;
+        this.isAlive = true; // Default hidup saat game mulai
     }
 
-    public int getId() { return id; }
+    public boolean isAlive() { return isAlive; }
+    public void setAlive(boolean alive) { this.isAlive = alive; }
+    
     public String getName() { return name; }
     public Color getColor() { return color; }
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
 }

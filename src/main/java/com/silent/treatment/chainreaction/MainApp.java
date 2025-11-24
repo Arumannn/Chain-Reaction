@@ -15,7 +15,7 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         // 1. Inisialisasi Game (Core)
         GameManager gm = GameManager.getInstance();
-        gm.initializeGame(9, 6, 3); // Board 9x6, 2 Players
+        gm.initializeGame(10, 10, 3); // Board 9x6, 2 Players
 
         // 2. Inisialisasi Controller
         GameController controller = new GameController();
@@ -37,4 +37,4 @@ public class MainApp extends Application {
     public static void main(String[] args) {
         launch();
     }
-}
+}   
