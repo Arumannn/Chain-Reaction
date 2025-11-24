@@ -6,23 +6,30 @@ import com.silent.treatment.chainreaction.model.Player;
 
 public class GameController {
 
+    private Runnable onTurnChanged; // Callback untuk update UI luar
+
+    // Method ini yang hilang dan menyebabkan error
+    public void setOnTurnChanged(Runnable onTurnChanged) {
+        this.onTurnChanged = onTurnChanged;
+    }
+
     public void handleCellClick(Cell cell) {
         GameManager gm = GameManager.getInstance();
         Player currentPlayer = gm.getCurrentPlayer();
 
-        // Validasi Move (FR-2.1)
-        // Boleh isi jika kosong ATAU milik sendiri
+        // Validasi Move
         if (cell.getOwner() == null || cell.getOwner().equals(currentPlayer)) {
-            System.out.println(currentPlayer.getName() + " clicked " + cell.getX() + "," + cell.getY());
-
             // Eksekusi Logika
             cell.addOrb(currentPlayer, gm.getBoard());
 
             // Ganti Giliran
             gm.nextTurn();
 
-            // Debug Log
-            System.out.println("Next Turn: " + gm.getCurrentPlayer().getName());
+            // Beritahu UI kalau giliran berubah (Panggil callback)
+            if (onTurnChanged != null) {
+                onTurnChanged.run();
+            }
+
         } else {
             System.out.println("Invalid Move! Cell owned by " + cell.getOwner().getName());
         }
