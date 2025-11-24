@@ -4,6 +4,8 @@ import com.silent.treatment.chainreaction.controller.GameController;
 import com.silent.treatment.chainreaction.core.GameManager;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.GridPanel;
+import com.silent.treatment.chainreaction.view.MenuView;
+import com.silent.treatment.chainreaction.view.SetupView;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,6 +24,9 @@ import javafx.stage.Stage;
 
 public class MainApp extends Application {
 
+    private Stage primaryStage;
+
+    // Komponen UI dari Faris
     private Label turnLabel;
     private Circle turnIndicatorCircle;
     private VBox playersStatusBox;
@@ -65,10 +70,83 @@ public class MainApp extends Application {
 
         // Setup Scene
         Scene scene = new Scene(root, 1024, 768);
+        this.primaryStage = stage;
         stage.setTitle("Silent Treatment - Chain Reaction");
-        stage.setScene(scene);
+
+        // Mulai dari Menu Utama (Logic Revan)
+        showMainMenu();
         stage.show();
     }
+
+    // --- BAGIAN 1: NAVIGASI (Dari Revan) ---
+
+    private void showMainMenu() {
+        MenuView menuView = new MenuView(
+                () -> showGameSetup(),
+                () -> System.exit(0)
+        );
+        primaryStage.setScene(new Scene(menuView, 450, 700));
+        primaryStage.centerOnScreen();
+    }
+
+    private void showGameSetup() {
+        SetupView setupView = new SetupView(
+                config -> startGame(config),
+                () -> showMainMenu()
+        );
+        primaryStage.setScene(new Scene(setupView, 500, 600));
+        primaryStage.centerOnScreen();
+    }
+
+    // --- BAGIAN 2: LOGIKA GAME (Gabungan Logic Revan + UI Faris) ---
+
+    private void startGame(SetupView.GameConfig config) {
+        // 1. Inisialisasi Core (Gunakan method baru di GameManager)
+        GameManager gm = GameManager.getInstance();
+        gm.initializeGame(config.width, config.height, config.players);
+
+        // 2. Init Controller & View
+        GameController controller = new GameController();
+        gameBoardView = new GridPanel(gm.getBoard(), controller);
+
+        // 3. Setup Layout Utama (UI Mewah Faris)
+        BorderPane root = new BorderPane();
+        root.setStyle("-fx-background-color: #121212;");
+
+        // --- Header Section ---
+        HBox header = createHeader(gm);
+        root.setTop(header);
+
+        // --- Center Section ---
+        VBox centerContainer = new VBox(gameBoardView);
+        centerContainer.setAlignment(Pos.CENTER);
+        centerContainer.setPadding(new Insets(20));
+        root.setCenter(centerContainer);
+
+        // --- Right Sidebar ---
+        VBox sidebar = createPlayerSidebar(gm);
+        root.setRight(sidebar);
+
+        // 4. Hubungkan Controller dengan UI
+        controller.setOnTurnChanged(() -> updateGameInfo(gm));
+
+        // Init Data Awal
+        updateGameInfo(gm);
+
+        // 5. Atur Scene (Ukuran dinamis menyesuaikan board)
+        // Estimasi: (lebar board * 60px) + Sidebar(250) + Padding(100)
+        double winWidth = (config.width * 60) + 350;
+        double winHeight = (config.height * 60) + 150;
+
+        // Batasi minimal size agar tidak kekecilan
+        if (winWidth < 800) winWidth = 800;
+        if (winHeight < 600) winHeight = 600;
+
+        primaryStage.setScene(new Scene(root, winWidth, winHeight));
+        primaryStage.centerOnScreen();
+    }
+
+    // --- BAGIAN 3: HELPER UI (Dari Faris) ---
 
     private HBox createHeader(GameManager gm) {
         HBox header = new HBox(15);
@@ -80,11 +158,9 @@ public class MainApp extends Application {
         titleLabel.setTextFill(Color.GRAY);
         titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
-        // Lingkaran warna indikator
         turnIndicatorCircle = new Circle(8);
         turnIndicatorCircle.setStroke(Color.WHITE);
 
-        // Teks Nama Pemain
         turnLabel = new Label();
         turnLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
 
@@ -108,20 +184,19 @@ public class MainApp extends Application {
         return sidebar;
     }
 
-    // Method utama yang dipanggil setiap kali giliran berganti untuk update semua info UI
     private void updateGameInfo(GameManager gm) {
         Player current = gm.getCurrentPlayer();
-        
-        // 1. Update Header Info
+
+        // Update Header
         turnLabel.setText(current.getName().toUpperCase());
         turnLabel.setTextFill(current.getColor());
         turnIndicatorCircle.setFill(current.getColor());
         turnIndicatorCircle.setEffect(new DropShadow(10, current.getColor()));
 
-        // 2. Update Grid Background Color (Fitur Ganti Warna Background)
+        // Update Grid Background (Fitur Faris)
         gameBoardView.setBackgroundTheme(current.getColor());
 
-        // 3. Update Sidebar (List Pemain & Orb Count)
+        // Update Sidebar
         playersStatusBox.getChildren().clear();
         for (Player p : gm.getPlayers()) {
             HBox playerRow = new HBox(10);
@@ -134,13 +209,12 @@ public class MainApp extends Application {
             }
 
             Circle pIcon = new Circle(5, p.getColor());
-            
             VBox infoBox = new VBox(2);
             Label pName = new Label(p.getName());
             pName.setTextFill(Color.LIGHTGRAY);
             pName.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-            
-            // Hitung total orb pemain
+
+            // Menggunakan method getPlayerOrbCount yang sudah kita tambahkan ke GameManager
             int orbCount = gm.getPlayerOrbCount(p);
             Label pOrbs = new Label(orbCount + " Orbs");
             pOrbs.setTextFill(Color.GRAY);
@@ -148,7 +222,6 @@ public class MainApp extends Application {
 
             infoBox.getChildren().addAll(pName, pOrbs);
             playerRow.getChildren().addAll(pIcon, infoBox);
-            
             playersStatusBox.getChildren().add(playerRow);
         }
     }
@@ -156,4 +229,4 @@ public class MainApp extends Application {
     public static void main(String[] args) {
         launch();
     }
-}   
+}
