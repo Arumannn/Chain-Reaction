@@ -35,41 +35,41 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) {
         // 1. Inisialisasi Game (Core)
-        GameManager gm = GameManager.getInstance();
-        gm.initializeGame(10, 10, 3); // Board 9x6, 2 Players
+        // GameManager gm = GameManager.getInstance();
+        // gm.initializeGame(config.mapType, config.players); // Board 9x6, 2 Players
 
-        // 2. Inisialisasi Controller
-        GameController controller = new GameController();
+        // // 2. Inisialisasi Controller
+        // GameController controller = new GameController();
 
-        gameBoardView = new GridPanel(gm.getBoard(), controller);
+        // gameBoardView = new GridPanel(gm.getBoard(), controller);
 
-        // 3. Setup Layout Utama (BorderPane)
-        BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #121212;"); // Dark Theme Background
+        // // 3. Setup Layout Utama (BorderPane)
+        // BorderPane root = new BorderPane();
+        // root.setStyle("-fx-background-color: #121212;"); // Dark Theme Background
 
-        // --- Header Section (Info Giliran) ---
-        HBox header = createHeader(gm);
-        root.setTop(header);
+        // // --- Header Section (Info Giliran) ---
+        // HBox header = createHeader(gm);
+        // root.setTop(header);
         
-        // --- Center Section (Game Board) ---
-        // Bungkus GridPanel dalam VBox agar bisa ditengah-tengah
-        VBox centerContainer = new VBox(gameBoardView);
-        centerContainer.setAlignment(Pos.CENTER);
-        centerContainer.setPadding(new Insets(20));
-        root.setCenter(centerContainer);
+        // // --- Center Section (Game Board) ---
+        // // Bungkus GridPanel dalam VBox agar bisa ditengah-tengah
+        // VBox centerContainer = new VBox(gameBoardView);
+        // centerContainer.setAlignment(Pos.CENTER);
+        // centerContainer.setPadding(new Insets(20));
+        // root.setCenter(centerContainer);
 
-        // --- Right Sidebar (Player Stats) ---
-        VBox sidebar = createPlayerSidebar(gm);
-        root.setRight(sidebar);
+        // // --- Right Sidebar (Player Stats) ---
+        // VBox sidebar = createPlayerSidebar(gm);                                 
+        // root.setRight(sidebar);
 
-        // 4. Hubungkan Controller dengan UI Header
-        controller.setOnTurnChanged(() -> updateGameInfo(gm));
+        // // 4. Hubungkan Controller dengan UI Header
+        // controller.setOnTurnChanged(() -> updateGameInfo(gm));
 
-        // Init Data Awal
-        updateGameInfo(gm);
+        // // Init Data Awal
+        // updateGameInfo(gm);
 
-        // Setup Scene
-        Scene scene = new Scene(root, 1024, 768);
+        // // Setup Scene
+        // Scene scene = new Scene(root, 1024, 768);
         this.primaryStage = stage;
         stage.setTitle("Silent Treatment - Chain Reaction");
 
@@ -103,7 +103,7 @@ public class MainApp extends Application {
     private void startGame(SetupView.GameConfig config) {
         // 1. Inisialisasi Core (Gunakan method baru di GameManager)
         GameManager gm = GameManager.getInstance();
-        gm.initializeGame(config.width, config.height, config.players);
+        gm.initializeGame(config.mapType , config.players);
 
         // 2. Init Controller & View
         GameController controller = new GameController();
@@ -135,8 +135,10 @@ public class MainApp extends Application {
 
         // 5. Atur Scene (Ukuran dinamis menyesuaikan board)
         // Estimasi: (lebar board * 60px) + Sidebar(250) + Padding(100)
-        double winWidth = (config.width * 60) + 350;
-        double winHeight = (config.height * 60) + 150;
+        // double winWidth = (config.width * 60) + 350;
+        // double winHeight = (config.height * 60) + 150;
+        double winWidth = (config.mapType.getWidth() * 60) + 350;
+        double winHeight = (config.mapType.getHeight() * 60) + 150;
 
         // Batasi minimal size agar tidak kekecilan
         if (winWidth < 800) winWidth = 800;
@@ -178,7 +180,7 @@ public class MainApp extends Application {
         title.setTextFill(Color.WHITE);
         title.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 16));
         
-        playersStatusBox = new VBox(10); // Tempat item player dinamis yang akan diisi updateGameInfo
+        playersStatusBox = new VBox(10); 
         
         sidebar.getChildren().addAll(title, new Separator(), playersStatusBox);
         return sidebar;
@@ -187,23 +189,19 @@ public class MainApp extends Application {
     private void updateGameInfo(GameManager gm) {
         Player current = gm.getCurrentPlayer();
 
-        // Update Header
         turnLabel.setText(current.getName().toUpperCase());
         turnLabel.setTextFill(current.getColor());
         turnIndicatorCircle.setFill(current.getColor());
         turnIndicatorCircle.setEffect(new DropShadow(10, current.getColor()));
 
-        // Update Grid Background (Fitur Faris)
         gameBoardView.setBackgroundTheme(current.getColor());
 
-        // Update Sidebar
         playersStatusBox.getChildren().clear();
         for (Player p : gm.getPlayers()) {
             HBox playerRow = new HBox(10);
             playerRow.setAlignment(Pos.CENTER_LEFT);
             playerRow.setPadding(new Insets(10));
             
-            // Highlight pemain yang sedang jalan di sidebar dengan background kotak
             if (p.equals(current)) {
                 playerRow.setStyle("-fx-background-color: #333; -fx-background-radius: 5;");
             }
@@ -214,7 +212,6 @@ public class MainApp extends Application {
             pName.setTextFill(Color.LIGHTGRAY);
             pName.setFont(Font.font("Arial", FontWeight.BOLD, 12));
 
-            // Menggunakan method getPlayerOrbCount yang sudah kita tambahkan ke GameManager
             int orbCount = gm.getPlayerOrbCount(p);
             Label pOrbs = new Label(orbCount + " Orbs");
             pOrbs.setTextFill(Color.GRAY);

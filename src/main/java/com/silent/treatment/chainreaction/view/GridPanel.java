@@ -25,23 +25,18 @@ public class GridPanel extends GridPane {
         setHgap(5);
         setVgap(5);
 
-        // Default Style (Dark Grey) saat awal game
         setBackgroundTheme(Color.valueOf("#222222"));
 
         initializeUI(board);
     }
 
-    // Method ini yang hilang dan menyebabkan error
     public void setBackgroundTheme(Color playerColor) {
-        // Konversi Color JavaFX ke format CSS rgba
-        // Kita gunakan opacity 0.15 agar warnanya sangat lembut (soft)
         String rgba = String.format("rgba(%d, %d, %d, 0.15)",
                 (int)(playerColor.getRed() * 255),
                 (int)(playerColor.getGreen() * 255),
                 (int)(playerColor.getBlue() * 255)
         );
 
-        // Terapkan style dengan warna border tetap abu-abu gelap
         this.setStyle(
                 "-fx-background-color: " + rgba + ";" +
                         "-fx-padding: 15;" +
@@ -56,13 +51,14 @@ public class GridPanel extends GridPane {
         for (int i = 0; i < board.getWidth(); i++) {
             for (int j = 0; j < board.getHeight(); j++) {
                 Cell cell = board.getCell(i, j);
-                CellView cellView = new CellView(cell);
-                this.add(cellView, i, j);
+                if (cell != null) {
+                    CellView cellView = new CellView(cell);
+                    this.add(cellView, i, j);
+                }
             }
         }
     }
 
-    // Inner Class: Tampilan Sel Individual
     private class CellView extends StackPane implements GameObserver {
         private Cell cell;
         private Rectangle border;
@@ -74,7 +70,6 @@ public class GridPanel extends GridPane {
             this.cell = cell;
             this.cell.attach(this);
 
-            // 1. Background Kotak (Rounded)
             border = new Rectangle(55, 55);
             border.setFill(Color.valueOf("#2b2b2b"));
             border.setStroke(Color.valueOf("#444444"));
@@ -82,24 +77,20 @@ public class GridPanel extends GridPane {
             border.setArcWidth(15);
             border.setArcHeight(15);
 
-            // 2. Efek Glow (Cahaya Neon)
             glowEffect = new DropShadow();
             glowEffect.setRadius(15);
             glowEffect.setSpread(0.4);
 
-            // 3. Orb Representation
             orb = new Circle(12);
             orb.setFill(Color.TRANSPARENT);
             orb.setEffect(glowEffect);
 
-            // 4. Text Count
             countText = new Text("");
             countText.setFill(Color.WHITE);
             countText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
             this.getChildren().addAll(border, orb, countText);
 
-            // Hover Effect
             this.setOnMouseEntered(e -> {
                 if(cell.getOwner() == null) border.setFill(Color.valueOf("#383838"));
             });
@@ -107,7 +98,6 @@ public class GridPanel extends GridPane {
                 if(cell.getOwner() == null) border.setFill(Color.valueOf("#2b2b2b"));
             });
 
-            // Event Click
             this.setOnMouseClicked(e -> controller.handleCellClick(cell));
         }
 
@@ -117,18 +107,14 @@ public class GridPanel extends GridPane {
             if (count > 0 && cell.getOwner() != null) {
                 Color pColor = cell.getOwner().getColor();
 
-                // Ubah warna Border sedikit mengikuti pemain
                 border.setStroke(pColor.darker());
 
-                // Orb menyala
                 orb.setFill(pColor);
                 glowEffect.setColor(pColor);
                 countText.setText(String.valueOf(count));
 
-                // Logika Visual Sederhana: Ukuran orb berubah sesuai jumlah
                 orb.setRadius(10 + (count * 3));
 
-                // Jika sudah kritis (siap meledak), beri indikasi visual
                 if (count >= cell.getCriticalMass()) {
                     orb.setStroke(Color.WHITE);
                     orb.setStrokeWidth(2);
@@ -136,7 +122,6 @@ public class GridPanel extends GridPane {
                     orb.setStroke(null);
                 }
             } else {
-                // Reset ke tampilan kosong
                 border.setStroke(Color.valueOf("#444444"));
                 orb.setFill(Color.TRANSPARENT);
                 glowEffect.setColor(Color.TRANSPARENT);
