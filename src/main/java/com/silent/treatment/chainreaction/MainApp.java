@@ -6,7 +6,8 @@ import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.GridPanel;
 import com.silent.treatment.chainreaction.view.MenuView;
 import com.silent.treatment.chainreaction.view.SetupView;
-
+import com.silent.treatment.chainreaction.view.GameOverView;
+import com.silent.treatment.chainreaction.view.TutorialView;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,6 +23,9 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Pane;
 
 public class MainApp extends Application {
 
@@ -47,8 +51,9 @@ public class MainApp extends Application {
 
     private void showMainMenu() {
         MenuView menuView = new MenuView(
-                () -> showGameSetup(),
-                () -> System.exit(0)
+                () -> showGameSetup(), // New Game
+                () -> System.exit(0),  // Exit
+                this::startTutorial    // Tutorial (Callback baru)
         );
         primaryStage.setScene(new Scene(menuView, 450, 700));
         primaryStage.centerOnScreen();
@@ -66,7 +71,7 @@ public class MainApp extends Application {
     // --- BAGIAN 2: LOGIKA GAME (Gabungan Logic Revan + UI Faris) ---
 
     private void startGame(SetupView.GameConfig config) {
-        // 1. Inisialisasi Core (Gunakan method baru di GameManager)
+        // 1. Inisialisasi Core
         GameManager gm = GameManager.getInstance();
         gm.initializeGame(config.width, config.height, config.players);
 
@@ -74,40 +79,65 @@ public class MainApp extends Application {
         GameController controller = new GameController();
         gameBoardView = new GridPanel(gm.getBoard(), controller);
 
-        // 3. Setup Layout Utama (UI Mewah Faris)
-        BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: #121212;");
+        // 3. Setup Layout Utama
+        // SAYA UBAH NAMA VARIABEL 'root' MENJADI 'gameRoot' AGAR KONSISTEN
+        BorderPane gameRoot = new BorderPane();
+        gameRoot.setStyle("-fx-background-color: #121212;");
 
         // --- Header Section ---
-        HBox header = createHeader(gm);
-        root.setTop(header);
+        gameRoot.setTop(createHeader(gm));
 
         // --- Center Section ---
         VBox centerContainer = new VBox(gameBoardView);
         centerContainer.setAlignment(Pos.CENTER);
         centerContainer.setPadding(new Insets(20));
-        root.setCenter(centerContainer);
+        gameRoot.setCenter(centerContainer);
 
         // --- Right Sidebar ---
-        VBox sidebar = createPlayerSidebar(gm);
-        root.setRight(sidebar);
+        gameRoot.setRight(createPlayerSidebar(gm));
 
         // 4. Hubungkan Controller dengan UI
         controller.setOnTurnChanged(() -> updateGameInfo(gm));
+// [LOGIC GAME OVER]
+        controller.setOnGameOver(() -> {
+            Player winner = gm.getWinner();
+
+            // Aksi saat tombol "VIEW BOARD" ditekan
+            Runnable onCloseDialog = () -> {
+                gameRoot.setEffect(null); // Hapus efek blur
+
+                // === PERBAIKAN CRITICAL ERROR ===
+                // Lepaskan gameRoot dari StackPane sebelum menjadikannya root utama
+                if (gameRoot.getParent() instanceof Pane) {
+                    ((Pane) gameRoot.getParent()).getChildren().remove(gameRoot);
+                }
+
+                primaryStage.getScene().setRoot(gameRoot);
+            };
+
+            // Buat View Game Over
+            GameOverView gameOverView = new GameOverView(winner, this::showMainMenu, onCloseDialog);
+
+            // Beri efek Blur ke game di belakangnya
+            gameRoot.setEffect(new GaussianBlur(10));
+
+            // Tumpuk GameOverView di atas GameRoot
+            StackPane globalRoot = new StackPane(gameRoot, gameOverView);
+            primaryStage.getScene().setRoot(globalRoot);
+        });
 
         // Init Data Awal
         updateGameInfo(gm);
 
         // 5. Atur Scene (Ukuran dinamis menyesuaikan board)
-        // Estimasi: (lebar board * 60px) + Sidebar(250) + Padding(100)
         double winWidth = (config.width * 60) + 350;
         double winHeight = (config.height * 60) + 150;
 
-        // Batasi minimal size agar tidak kekecilan
         if (winWidth < 800) winWidth = 800;
         if (winHeight < 600) winHeight = 600;
 
-        primaryStage.setScene(new Scene(root, winWidth, winHeight));
+        // Gunakan gameRoot sebagai scene awal
+        primaryStage.setScene(new Scene(gameRoot, winWidth, winHeight));
         primaryStage.centerOnScreen();
     }
 
@@ -131,6 +161,11 @@ public class MainApp extends Application {
 
         header.getChildren().addAll(titleLabel, turnIndicatorCircle, turnLabel);
         return header;
+    }
+    private void startTutorial() {
+        TutorialView tutorialView = new TutorialView(this::showMainMenu);
+        primaryStage.setScene(new Scene(tutorialView, 550, 750));
+        primaryStage.centerOnScreen();
     }
 
     private VBox createPlayerSidebar(GameManager gm) {

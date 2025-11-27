@@ -22,16 +22,19 @@ public class MenuView extends StackPane {
 
     private final Runnable onNewGame;
     private final Runnable onExit;
+    private final Runnable onTutorial;
 
     private final List<StackPane> menuButtons = new ArrayList<>();
     private int selectedIndex = 0;
 
-    // Container untuk konten utama menu (agar bisa diburamkan saat dialog muncul)
+    // Container untuk konten utama menu
     private final VBox menuContainer;
 
-    public MenuView(Runnable onNewGame, Runnable onExit) {
+    // [PERBAIKAN] Constructor sudah benar sesuai snippet Anda
+    public MenuView(Runnable onNewGame, Runnable onExit, Runnable onTutorial) {
         this.onNewGame = onNewGame;
         this.onExit = onExit;
+        this.onTutorial = onTutorial;
 
         // --- 1. Background Animasi ---
         Pane backgroundLayer = new Pane();
@@ -50,11 +53,10 @@ public class MenuView extends StackPane {
         VBox menuBox = new VBox(20);
         menuBox.setAlignment(Pos.CENTER);
 
+        // Tombol-tombol menu
         menuButtons.add(createButton("NEW GAME", Color.LIME, onNewGame));
-        menuButtons.add(createButton("HOW TO PLAY", Color.YELLOW, () -> System.out.println("Tutorial Clicked")));
+        menuButtons.add(createButton("HOW TO PLAY", Color.YELLOW, onTutorial));
         menuButtons.add(createButton("SETTINGS", Color.MAGENTA, () -> System.out.println("Settings Clicked")));
-
-        // UPDATE: Tombol Exit sekarang memanggil method konfirmasi
         menuButtons.add(createButton("EXIT", Color.RED, this::showExitConfirmation));
 
         menuBox.getChildren().addAll(menuButtons);
@@ -67,8 +69,7 @@ public class MenuView extends StackPane {
         // --- 4. Navigasi Keyboard ---
         this.setFocusTraversable(true);
         this.setOnKeyPressed(event -> {
-            // Jika ada dialog overlay, matikan navigasi menu utama
-            if (this.getChildren().size() > 2) return;
+            if (this.getChildren().size() > 2) return; // Stop jika ada dialog
 
             if (event.getCode() == KeyCode.UP) {
                 navigate(-1);
@@ -81,20 +82,17 @@ public class MenuView extends StackPane {
         updateSelectionVisuals();
     }
 
-    // --- FITUR BARU: DIALOG KONFIRMASI ---
+    // --- Dialog Konfirmasi Exit ---
     private void showExitConfirmation() {
-        // 1. Layer Gelap (Overlay)
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);"); // Hitam transparan
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
 
-        // 2. Kotak Dialog
         VBox dialog = new VBox(20);
         dialog.setMaxWidth(400);
         dialog.setMaxHeight(250);
         dialog.setAlignment(Pos.CENTER);
         dialog.setPadding(new javafx.geometry.Insets(30));
 
-        // Styling Dialog (Glassmorphism & Border Merah)
         dialog.setStyle(
                 "-fx-background-color: #1e1e1e;" +
                         "-fx-border-color: red;" +
@@ -104,7 +102,6 @@ public class MenuView extends StackPane {
         );
         dialog.setEffect(new DropShadow(30, Color.BLACK));
 
-        // 3. Teks
         Label lblTitle = new Label("EXIT GAME?");
         lblTitle.setTextFill(Color.WHITE);
         lblTitle.setFont(Font.font("Impact", 30));
@@ -113,59 +110,24 @@ public class MenuView extends StackPane {
         lblDesc.setTextFill(Color.LIGHTGRAY);
         lblDesc.setFont(Font.font("Arial", 16));
 
-        // 4. Tombol Yes / No
         HBox buttons = new HBox(20);
         buttons.setAlignment(Pos.CENTER);
 
-        StackPane btnYes = createMiniButton("YES", Color.RED, () -> {
-            System.exit(0); // Keluar Aplikasi
-        });
-
+        StackPane btnYes = createMiniButton("YES", Color.RED, onExit);
         StackPane btnNo = createMiniButton("CANCEL", Color.GRAY, () -> {
-            // Tutup Dialog
             this.getChildren().remove(overlay);
-            menuContainer.setEffect(null); // Hapus blur
+            menuContainer.setEffect(null);
         });
 
         buttons.getChildren().addAll(btnNo, btnYes);
         dialog.getChildren().addAll(lblTitle, lblDesc, buttons);
         overlay.getChildren().add(dialog);
 
-        // Efek Blur pada menu belakang supaya fokus ke dialog
         menuContainer.setEffect(new GaussianBlur(10));
-
         this.getChildren().add(overlay);
     }
 
-    // --- Helper: Mini Button untuk Dialog ---
-    private StackPane createMiniButton(String text, Color color, Runnable action) {
-        Text txt = new Text(text);
-        txt.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        txt.setFill(Color.WHITE);
-
-        Rectangle border = new Rectangle(120, 40);
-        border.setFill(color.deriveColor(0, 1, 1, 0.2)); // Isi transparan berwarna
-        border.setStroke(color);
-        border.setStrokeWidth(2);
-        border.setArcWidth(10); border.setArcHeight(10);
-
-        StackPane btn = new StackPane(border, txt);
-        btn.setOnMouseClicked(e -> action.run());
-
-        // Hover Effect
-        btn.setOnMouseEntered(e -> {
-            border.setFill(color); // Jadi solid saat hover
-            txt.setFill(Color.BLACK);
-            btn.setCursor(javafx.scene.Cursor.HAND);
-        });
-        btn.setOnMouseExited(e -> {
-            border.setFill(color.deriveColor(0, 1, 1, 0.2)); // Balik transparan
-            txt.setFill(Color.WHITE);
-        });
-        return btn;
-    }
-
-    // --- Logic Menu Utama ---
+    // --- Helper UI ---
     private void navigate(int direction) {
         selectedIndex += direction;
         if (selectedIndex < 0) selectedIndex = menuButtons.size() - 1;
@@ -177,14 +139,16 @@ public class MenuView extends StackPane {
         for (int i = 0; i < menuButtons.size(); i++) {
             StackPane btn = menuButtons.get(i);
             Rectangle border = (Rectangle) btn.getChildren().get(0);
-            Color baseColor = (Color) border.getStroke();
+            Color baseColor = (Color) border.getStroke(); // Ambil warna dari stroke border
 
             if (i == selectedIndex) {
                 border.setFill(baseColor.deriveColor(0, 1, 1, 0.3));
-                btn.setScaleX(1.1); btn.setScaleY(1.1);
+                btn.setScaleX(1.1);
+                btn.setScaleY(1.1);
             } else {
                 border.setFill(null);
-                btn.setScaleX(1.0); btn.setScaleY(1.0);
+                btn.setScaleX(1.0);
+                btn.setScaleY(1.0);
             }
         }
     }
@@ -202,7 +166,8 @@ public class MenuView extends StackPane {
         border.setFill(null);
         border.setStroke(color);
         border.setStrokeWidth(2);
-        border.setArcWidth(15); border.setArcHeight(15);
+        border.setArcWidth(15);
+        border.setArcHeight(15);
         border.setEffect(new DropShadow(10, color));
 
         StackPane btn = new StackPane(border, txt);
@@ -214,6 +179,33 @@ public class MenuView extends StackPane {
         return btn;
     }
 
+    private StackPane createMiniButton(String text, Color color, Runnable action) {
+        Text txt = new Text(text);
+        txt.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        txt.setFill(Color.WHITE);
+
+        Rectangle border = new Rectangle(120, 40);
+        border.setFill(color.deriveColor(0, 1, 1, 0.2));
+        border.setStroke(color);
+        border.setStrokeWidth(2);
+        border.setArcWidth(10);
+        border.setArcHeight(10);
+
+        StackPane btn = new StackPane(border, txt);
+        btn.setOnMouseClicked(e -> action.run());
+
+        btn.setOnMouseEntered(e -> {
+            border.setFill(color);
+            txt.setFill(Color.BLACK);
+            btn.setCursor(javafx.scene.Cursor.HAND);
+        });
+        btn.setOnMouseExited(e -> {
+            border.setFill(color.deriveColor(0, 1, 1, 0.2));
+            txt.setFill(Color.WHITE);
+        });
+        return btn;
+    }
+
     private void createFloatingAtoms(Pane pane) {
         Random rand = new Random();
         List<Circle> atoms = new ArrayList<>();
@@ -221,7 +213,8 @@ public class MenuView extends StackPane {
         for (int i = 0; i < 15; i++) {
             Circle c = new Circle(rand.nextInt(5) + 2, colors[rand.nextInt(4)]);
             c.setOpacity(0.3);
-            c.setTranslateX(rand.nextInt(400)); c.setTranslateY(rand.nextInt(600));
+            c.setTranslateX(rand.nextInt(400));
+            c.setTranslateY(rand.nextInt(600));
             pane.getChildren().add(c);
             atoms.add(c);
         }
