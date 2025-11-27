@@ -7,14 +7,25 @@ import com.silent.treatment.chainreaction.model.Player;
 public class GameController {
 
     private Runnable onTurnChanged; // Callback untuk update UI luar
-
+    private Runnable onGameOver;
     // Method ini yang hilang dan menyebabkan error
     public void setOnTurnChanged(Runnable onTurnChanged) {
         this.onTurnChanged = onTurnChanged;
     }
 
+    public void setOnGameOver(Runnable onGameOver) {
+        this.onGameOver = onGameOver;
+    }
+
+
     public void handleCellClick(Cell cell) {
         GameManager gm = GameManager.getInstance();
+        
+        if(gm.isGameOver()){
+            System.out.println("Game is Over. Please Reset");
+        }
+
+
         Player currentPlayer = gm.getCurrentPlayer();
 
         // Validasi Move
@@ -22,12 +33,22 @@ public class GameController {
             // Eksekusi Logika
             cell.addOrb(currentPlayer, gm.getBoard());
 
-            // Ganti Giliran
-            gm.nextTurn();
+            gm.checkEliminations();
+            Player winner = gm.checkWinner();
 
-            // Beritahu UI kalau giliran berubah (Panggil callback)
-            if (onTurnChanged != null) {
-                onTurnChanged.run();
+            if (winner != null) {
+                // Handle Game Over
+                if (onGameOver != null) {
+                    onGameOver.run();
+                }
+            } else {
+                // 3. Ganti Giliran jika game belum selesai
+                gm.nextTurn();
+                
+                // Beritahu UI kalau giliran berubah
+                if (onTurnChanged != null) {
+                    onTurnChanged.run();
+                }
             }
 
         } else {

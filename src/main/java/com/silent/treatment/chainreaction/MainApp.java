@@ -6,6 +6,7 @@ import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.GridPanel;
 import com.silent.treatment.chainreaction.view.MenuView;
 import com.silent.treatment.chainreaction.view.SetupView;
+
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -151,7 +152,7 @@ public class MainApp extends Application {
     private void updateGameInfo(GameManager gm) {
         Player current = gm.getCurrentPlayer();
 
-        // Update Header
+        // Update Header (Tampilkan giliran siapa sekarang)
         turnLabel.setText(current.getName().toUpperCase());
         turnLabel.setTextFill(current.getColor());
         turnIndicatorCircle.setFill(current.getColor());
@@ -160,31 +161,49 @@ public class MainApp extends Application {
         // Update Grid Background (Fitur Faris)
         gameBoardView.setBackgroundTheme(current.getColor());
 
-        // Update Sidebar
+        // Update Sidebar (Daftar Pemain)
         playersStatusBox.getChildren().clear();
         for (Player p : gm.getPlayers()) {
             HBox playerRow = new HBox(10);
             playerRow.setAlignment(Pos.CENTER_LEFT);
             playerRow.setPadding(new Insets(10));
 
+            // Highlight baris pemain yang sedang giliran jalan
             if (p.equals(current)) {
                 playerRow.setStyle("-fx-background-color: #333; -fx-background-radius: 5;");
             }
 
+            // Ikon Warna Pemain
             Circle pIcon = new Circle(5, p.getColor());
-
+            
+            // Container Nama & Status
             VBox infoBox = new VBox(2);
+            
             Label pName = new Label(p.getName());
-            pName.setTextFill(Color.LIGHTGRAY);
             pName.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+            
+            Label pStatus = new Label(); // Label untuk status Orb atau Game Over
+            pStatus.setFont(Font.font("Arial", 11));
 
-            // Menggunakan method getPlayerOrbCount yang sudah kita tambahkan ke GameManager
-            int orbCount = gm.getPlayerOrbCount(p);
-            Label pOrbs = new Label(orbCount + " Orbs");
-            pOrbs.setTextFill(Color.GRAY);
-            pOrbs.setFont(Font.font("Arial", 11));
+            // [LOGIKA BARU] Cek status Hidup/Mati
+            if (p.isAlive()) {
+                // Jika Hidup: Tampilkan nama normal & jumlah Orb
+                pName.setTextFill(Color.LIGHTGRAY);
+                
+                int orbCount = gm.getPlayerOrbCount(p);
+                pStatus.setText(orbCount + " Orbs");
+                pStatus.setTextFill(Color.GRAY);
+            } else {
+                // Jika Mati: Tampilkan status Game Over
+                pName.setTextFill(Color.DARKGRAY); // Nama diredupkan
+                pIcon.setFill(Color.DARKGRAY);     // Icon warna diredupkan (opsional)
+                
+                pStatus.setText("GAME OVER");
+                pStatus.setTextFill(Color.RED); // Tulisan merah agar tegas
+                pStatus.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            }
 
-            infoBox.getChildren().addAll(pName, pOrbs);
+            infoBox.getChildren().addAll(pName, pStatus);
             playerRow.getChildren().addAll(pIcon, infoBox);
 
             playersStatusBox.getChildren().add(playerRow);
