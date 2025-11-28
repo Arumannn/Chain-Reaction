@@ -23,6 +23,7 @@ public class MenuView extends StackPane {
     private final Runnable onNewGame;
     private final Runnable onExit;
     private final Runnable onTutorial;
+    private final Runnable onVsAI;
 
     private final List<StackPane> menuButtons = new ArrayList<>();
     private int selectedIndex = 0;
@@ -31,10 +32,11 @@ public class MenuView extends StackPane {
     private final VBox menuContainer;
 
     // [PERBAIKAN] Constructor sudah benar sesuai snippet Anda
-    public MenuView(Runnable onNewGame, Runnable onExit, Runnable onTutorial) {
+    public MenuView(Runnable onNewGame, Runnable onExit, Runnable onTutorial, Runnable onVsAI) {
         this.onNewGame = onNewGame;
         this.onExit = onExit;
         this.onTutorial = onTutorial;
+        this.onVsAI = onVsAI;
 
         // --- 1. Background Animasi ---
         Pane backgroundLayer = new Pane();
@@ -56,7 +58,7 @@ public class MenuView extends StackPane {
         // Tombol-tombol menu
         menuButtons.add(createButton("NEW GAME", Color.LIME, onNewGame));
         menuButtons.add(createButton("HOW TO PLAY", Color.YELLOW, onTutorial));
-        menuButtons.add(createButton("SETTINGS", Color.MAGENTA, () -> System.out.println("Settings Clicked")));
+        menuButtons.add(createButton("LAWAN KOMPUTER", Color.CYAN, onVsAI));
         menuButtons.add(createButton("EXIT", Color.RED, this::showExitConfirmation));
 
         menuBox.getChildren().addAll(menuButtons);

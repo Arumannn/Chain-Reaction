@@ -6,8 +6,8 @@ import com.silent.treatment.chainreaction.model.Player;
 
 public class GameController {
 
-    private Runnable onTurnChanged; // Callback untuk update UI luar
-    private Runnable onGameOver;
+    protected Runnable onTurnChanged; // Diubah dari private ke protected
+    protected Runnable onGameOver;
     // Method ini yang hilang dan menyebabkan error
     public void setOnTurnChanged(Runnable onTurnChanged) {
         this.onTurnChanged = onTurnChanged;
