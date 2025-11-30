@@ -47,6 +47,28 @@ public class Cell {
             explosionStrategy.explode(this, board, player);
         }
     }
+    
+    /**
+     * Menambahkan multiple orbs sekaligus.
+     * Digunakan untuk batch processing ketika multiple explosions menargetkan cell yang sama.
+     * 
+     * @param count Jumlah orb yang akan ditambahkan
+     * @param player Player pemilik orb
+     * @param board Board reference
+     */
+    public void addOrbs(int count, Player player, Board board) {
+        if (count <= 0) return;
+        
+        this.owner = player; // Update Owner
+        this.currentOrbs += count;
+
+        notifyObservers(); // Update UI
+
+        // Cek Overload - hanya cek sekali setelah semua orb ditambahkan
+        if (this.currentOrbs >= this.criticalMass) {
+            explosionStrategy.explode(this, board, player);
+        }
+    }
 
     // Setter Getter
     public void setOrbs(int orbs) {
@@ -61,6 +83,10 @@ public class Cell {
     public List<Cell> getNeighbors() { return neighbors; }
     public int getX() { return x; }
     public int getY() { return y; }
+    
+    public void setExplosionStrategy(ExplosionStrategy strategy) {
+        this.explosionStrategy = strategy;
+    }
 
     // Observer Methods
     public void attach(GameObserver observer) { observers.add(observer); }
