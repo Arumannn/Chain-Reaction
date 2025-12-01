@@ -103,6 +103,14 @@ public class MainApp extends Application {
 
         // 4. Hubungkan Controller dengan UI
         controller.setOnTurnChanged(() -> updateGameInfo(gm));
+        
+        // Setup animation callback
+        controller.setOnAnimationStart(() -> {
+            if (gameBoardView != null) {
+                gameBoardView.startAnimationProcessing();
+            }
+        });
+        
         // [LOGIC GAME OVER]
         controller.setOnGameOver(() -> {
             Player winner = gm.getWinner();
