@@ -3,6 +3,7 @@ package com.silent.treatment.chainreaction.view;
 import com.silent.treatment.chainreaction.controller.TutorialController;
 import com.silent.treatment.chainreaction.core.GameManager;
 import com.silent.treatment.chainreaction.model.Player;
+import com.silent.treatment.chainreaction.model.MapType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -22,10 +23,11 @@ public class TutorialView extends BorderPane {
     public TutorialView(Runnable onExit) {
         // 1. Setup Game Manager (Board Kecil 4x4 cukup untuk tutorial)
         GameManager gm = GameManager.getInstance();
+        MapType mapType = MapType.SMALL;
         List<Player> tutorialPlayers = new ArrayList<>();
         tutorialPlayers.add(new Player("YOU", Color.RED));
         tutorialPlayers.add(new Player("ENEMY", Color.LIMEGREEN));
-        gm.initializeGame(4, 4, tutorialPlayers);
+        gm.initializeGame(mapType, tutorialPlayers);
 
         // 2. Setup Instruksi (Kotak Melayang)
         Label instructionLabel = new Label("Initializing...");

@@ -6,15 +6,20 @@ import com.silent.treatment.chainreaction.model.Player;
 
 public class GameController {
 
-    protected Runnable onTurnChanged; // Diubah dari private ke protected
+    protected Runnable onTurnChanged; // Callback untuk update UI luar
     protected Runnable onGameOver;
-    // Method ini yang hilang dan menyebabkan error
+    protected Runnable onAnimationStart; // Callback untuk memulai animasi
+    
     public void setOnTurnChanged(Runnable onTurnChanged) {
         this.onTurnChanged = onTurnChanged;
     }
 
     public void setOnGameOver(Runnable onGameOver) {
         this.onGameOver = onGameOver;
+    }
+    
+    public void setOnAnimationStart(Runnable onAnimationStart) {
+        this.onAnimationStart = onAnimationStart;
     }
 
 
@@ -32,6 +37,11 @@ public class GameController {
         if (cell.getOwner() == null || cell.getOwner().equals(currentPlayer)) {
             // Eksekusi Logika
             cell.addOrb(currentPlayer, gm.getBoard());
+            
+            // Trigger animasi jika ada explosions yang di-queue
+            if (onAnimationStart != null) {
+                onAnimationStart.run();
+            }
 
             gm.checkEliminations();
             Player winner = gm.checkWinner();

@@ -7,6 +7,15 @@ public class Board {
     private int width;
     private int height;
     private Cell[][] grid;
+    private MapType mapType;
+
+    public Board(MapType mapType) {
+        this.mapType = mapType;
+        this.width = mapType.getWidth();
+        this.height = mapType.getHeight();
+        this.grid = new Cell[width][height];
+        initializeGrid();
+    }
 
     public Board(int width, int height) {
         this.width = width;
@@ -16,24 +25,27 @@ public class Board {
     }
 
     private void initializeGrid() {
-        // 1. Buat Objek Cell
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                grid[i][j] = new Cell(i, j);
+                if (mapType.isValid(i, j)) {
+                    grid[i][j] = new Cell(i, j);
+                } else {
+                    grid[i][j] = null;
+                }
             }
         }
 
-        // 2. Hubungkan Tetangga (Penting untuk Critical Mass)
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                grid[i][j].setNeighbors(findNeighbors(i, j));
+                if (grid[i][j] != null) { 
+                    grid[i][j].setNeighbors(findNeighbors(i, j));
+                }
             }
         }
     }
 
     private List<Cell> findNeighbors(int x, int y) {
         List<Cell> neighbors = new ArrayList<>();
-        // Atas, Bawah, Kiri, Kanan
         int[][] directions = {{0,1}, {0,-1}, {1,0}, {-1,0}};
 
         for (int[] dir : directions) {
@@ -41,7 +53,9 @@ public class Board {
             int ny = y + dir[1];
 
             if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                neighbors.add(grid[nx][ny]);
+                if (grid[nx][ny] != null) {
+                    neighbors.add(grid[nx][ny]);
+                }
             }
         }
         return neighbors;
@@ -52,7 +66,7 @@ public class Board {
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
             if (grid[i][j].getOwner() != null && grid[i][j].getOwner().equals(player)) {
-                count += grid[i][j].getOrbs(); // Atau count++ jika yang dihitung jumlah sel, bukan total orb
+                count += grid[i][j].getOrbs();
             }
         }
     }
