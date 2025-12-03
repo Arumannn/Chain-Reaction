@@ -19,7 +19,10 @@ public class GameManager {
     private int totalTurns;
     private boolean isGameOver;
     private Player winner;
-    private boolean humansDefeatedFlag;
+    // humansDefeated: status permanen sampai game berakhir
+    // humansDefeatedSignal: trigger satu kali untuk memberi tahu layer lain (UI)
+    private boolean humansDefeated;
+    private boolean humansDefeatedSignal;
 
     // Set to false for production/normal gameplay
     private static final boolean DEBUG_MODE = false;
@@ -43,7 +46,8 @@ public class GameManager {
         this.totalTurns = 0;
         this.isGameOver = false;
         this.winner = null;
-        this.humansDefeatedFlag = false;
+        this.humansDefeated = false;
+        this.humansDefeatedSignal = false;
         for (Player p : players) {
             p.setAlive(true);
             p.setHasPlayed(false); // Reset status sudah main
@@ -137,8 +141,9 @@ public class GameManager {
         }
 
         // Kondisi LOSE: semua pemain human mati tetapi masih ada bot hidup
-        if (!anyHumanAlive && anyBotAlive) {
-            humansDefeatedFlag = true; // Game terus berjalan, tapi tandai defeat
+        if (!anyHumanAlive && anyBotAlive && !humansDefeated) {
+            humansDefeated = true;          // status permanen
+            humansDefeatedSignal = true;    // sinyal satu kali untuk UI
         }
 
         // Kondisi menang normal: hanya 1 pemain (human atau bot) yang tersisa
@@ -163,14 +168,21 @@ public class GameManager {
 
     /**
      * Mengembalikan true sekali saat semua human telah dieliminasi.
-     * Flag akan otomatis di-reset setelah dibaca.
+     * Signal akan otomatis di-reset setelah dibaca.
      */
     public boolean consumeHumansDefeatedFlag() {
-        if (humansDefeatedFlag) {
-            humansDefeatedFlag = false;
+        if (humansDefeatedSignal) {
+            humansDefeatedSignal = false;
             return true;
         }
         return false;
+    }
+
+    /**
+     * Mengecek apakah semua pemain human sudah kalah (status permanen).
+     */
+    public boolean areHumansDefeated() {
+        return humansDefeated;
     }
 
     public int getPlayerOrbCount(Player player) {

@@ -87,8 +87,8 @@ public class AIController {
             }
 
             if (targetCell != null) {
-
-                gameController.handleCellClick(targetCell);
+                // Gunakan jalur khusus AI agar tetap bisa bermain meskipun human sudah kalah
+                gameController.handleAICellClick(targetCell);
             } else {
 
                 System.err.println("AI Warning: No valid move found for " + aiPlayer.getName());

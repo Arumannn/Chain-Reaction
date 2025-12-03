@@ -2,6 +2,7 @@ package com.silent.treatment.chainreaction.view;
 
 import com.silent.treatment.chainreaction.controller.GameController;
 import com.silent.treatment.chainreaction.core.ExplosionQueue;
+import com.silent.treatment.chainreaction.core.GameManager;
 import com.silent.treatment.chainreaction.model.Board;
 import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.strategy.AnimatedExplosionStrategy;
@@ -195,10 +196,19 @@ public class GridPanel extends StackPane {
             });
 
             this.setOnMouseClicked(e -> {
-                // Blok semua input pemain saat input dikunci (giliran bot)
+                GameManager gm = GameManager.getInstance();
+
+                // Setelah human kalah, klik apa pun boleh lewat ke controller
+                if (gm.areHumansDefeated()) {
+                    controller.handleCellClick(cell);
+                    return;
+                }
+
+                // Saat belum kalah: blok input jika sedang giliran bot
                 if (!playerInputEnabled) {
                     return;
                 }
+
                 controller.handleCellClick(cell);
             });
         }

@@ -25,6 +25,28 @@ public class GameController {
     public void setOnGameStateUpdated(Runnable onGameStateUpdated) { this.onGameStateUpdated = onGameStateUpdated; }
 
     public void handleCellClick(Cell cell) {
+        GameManager gm = GameManager.getInstance();
+
+        // Jika semua human sudah kalah, klik apa pun hanya akan memunculkan kembali lose screen
+        if (gm.areHumansDefeated()) {
+            if (onHumansDefeated != null) {
+                onHumansDefeated.run();
+            }
+            return;
+        }
+
+        processMove(cell, gm);
+    }
+
+    /**
+     * Jalur khusus untuk AI: tetap memproses move meskipun human sudah kalah.
+     */
+    public void handleAICellClick(Cell cell) {
+        GameManager gm = GameManager.getInstance();
+        processMove(cell, gm);
+    }
+
+    private void processMove(Cell cell, GameManager gm) {
         // [DEBUG] Cek status saat klik
         boolean isBusy = ExplosionQueue.getInstance().isProcessing();
         System.out.println("\n[CLICK] Player clicked cell (" + cell.getX() + "," + cell.getY() + ")");
@@ -35,7 +57,6 @@ public class GameController {
             return;
         }
 
-        GameManager gm = GameManager.getInstance();
         if (gm.isGameOver()) {
             System.out.println("Game is Over. Please Reset");
             return;
@@ -45,10 +66,10 @@ public class GameController {
 
         if (cell.getOwner() == null || cell.getOwner().equals(currentPlayer)) {
             System.out.println("[LOGIC] Move Valid. Adding Orb...");
-            
+
             // 2. Eksekusi Move
             cell.addOrb(currentPlayer, gm.getBoard());
-            currentPlayer.setHasPlayed(true); 
+            currentPlayer.setHasPlayed(true);
             notifyGameStateUpdated();
 
             // 3. Cek Status Ledakan SETELAH addOrb
