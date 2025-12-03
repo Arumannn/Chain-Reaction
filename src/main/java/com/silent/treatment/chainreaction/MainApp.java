@@ -60,6 +60,7 @@ public class MainApp extends Application {
 
         // Mulai dari Menu Utama (Logic Revan)
         showMainMenu();
+        SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
         stage.show();
     }
 
@@ -90,7 +91,6 @@ public class MainApp extends Application {
         // 1. Inisialisasi Core
         GameManager gm = GameManager.getInstance();
         gm.initializeGame(config.mapType , config.players);
-        SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
 
         // 2. Init Controller & View
         GameController controller = new GameController();
