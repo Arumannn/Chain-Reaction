@@ -1,6 +1,7 @@
 package com.silent.treatment.chainreaction.strategy;
 
 import com.silent.treatment.chainreaction.core.ExplosionQueue;
+import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.Board;
 import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
@@ -23,6 +24,8 @@ public class AnimatedExplosionStrategy implements ExplosionStrategy {
         // Queue explosion instead of immediate execution
         // Animasi akan dipicu oleh view layer, dan setelah selesai,
         // queue akan memproses explosion logic
+        SoundManager.getInstance().playSFX(SoundManager.SFX_EXPLOSION);
+
         explosionQueue.enqueueExplosion(cell, board, player);
     }
 }

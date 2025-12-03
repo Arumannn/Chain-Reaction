@@ -2,11 +2,13 @@ package com.silent.treatment.chainreaction;
 
 import com.silent.treatment.chainreaction.controller.GameController;
 import com.silent.treatment.chainreaction.core.GameManager;
+import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.GridPanel;
 import com.silent.treatment.chainreaction.view.MenuView;
 import com.silent.treatment.chainreaction.view.SetupView;
 import com.silent.treatment.chainreaction.view.GameOverView;
+import com.silent.treatment.chainreaction.view.GameMenuView;
 import com.silent.treatment.chainreaction.view.TutorialView;
 import com.silent.treatment.chainreaction.view.DifficultySelectionView;
 import com.silent.treatment.chainreaction.view.DifficultySelectionView.Difficulty;
@@ -16,6 +18,7 @@ import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.effect.DropShadow;
@@ -51,42 +54,7 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        // 1. Inisialisasi Game (Core)
-        // GameManager gm = GameManager.getInstance();
-        // gm.initializeGame(config.mapType, config.players); // Board 9x6, 2 Players
-
-        // // 2. Inisialisasi Controller
-        // GameController controller = new GameController();
-
-        // gameBoardView = new GridPanel(gm.getBoard(), controller);
-
-        // // 3. Setup Layout Utama (BorderPane)
-        // BorderPane root = new BorderPane();
-        // root.setStyle("-fx-background-color: #121212;"); // Dark Theme Background
-
-        // // --- Header Section (Info Giliran) ---
-        // HBox header = createHeader(gm);
-        // root.setTop(header);
-
-        // // --- Center Section (Game Board) ---
-        // // Bungkus GridPanel dalam VBox agar bisa ditengah-tengah
-        // VBox centerContainer = new VBox(gameBoardView);
-        // centerContainer.setAlignment(Pos.CENTER);
-        // centerContainer.setPadding(new Insets(20));
-        // root.setCenter(centerContainer);
-
-        // // --- Right Sidebar (Player Stats) ---
-        // VBox sidebar = createPlayerSidebar(gm);
-        // root.setRight(sidebar);
-
-        // // 4. Hubungkan Controller dengan UI Header
-        // controller.setOnTurnChanged(() -> updateGameInfo(gm));
-
-        // // Init Data Awal
-        // updateGameInfo(gm);
-
-        // // Setup Scene
-        // Scene scene = new Scene(root, 1024, 768);
+    
         this.primaryStage = stage;
         stage.setTitle("Silent Treatment - Chain Reaction");
 
@@ -121,7 +89,8 @@ public class MainApp extends Application {
     private void startGame(SetupView.GameConfig config) {
         // 1. Inisialisasi Core
         GameManager gm = GameManager.getInstance();
-        gm.initializeGame(config.mapType, config.players);
+        gm.initializeGame(config.mapType , config.players);
+        SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
 
         // 2. Init Controller & View
         GameController controller = new GameController();
@@ -175,9 +144,8 @@ public class MainApp extends Application {
         controller.setOnAnimationStart(() -> {
             if (gameBoardView != null) {
                 gameBoardView.startAnimationProcessing();
-            }
+            } 
         });
-
         // [LOGIC GAME OVER]
         controller.setOnGameOver(() -> {
             Player winner = gm.getWinner();
@@ -185,7 +153,9 @@ public class MainApp extends Application {
             // Aksi saat tombol "VIEW BOARD" ditekan
             Runnable onCloseDialog = () -> {
                 gameRoot.setEffect(null); // Hapus efek blur
-                globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance);
+                globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance); //current
+                // globalGameRoot.getChildren().removeIf(node -> node instanceof GameOverView); //incomming
+;
             };
 
             // Buat View Game Over
@@ -213,18 +183,40 @@ public class MainApp extends Application {
         if (winHeight < 600)
             winHeight = 600;
 
-        // PENTING: Gunakan globalGameRoot sebagai root, bukan gameRoot langsung
+        // Gunakan gameRoot sebagai scene awal
         primaryStage.setScene(new Scene(globalGameRoot, winWidth, winHeight));
         primaryStage.centerOnScreen();
+    }
+
+    // --- LOGIC MENU PAUSE ---
+    private void showInGameMenu() {
+        // Aksi Resume: Hapus menu, hilangkan blur
+        Runnable onResume = () -> {
+            gameRoot.setEffect(null);
+            globalGameRoot.getChildren().removeIf(node -> node instanceof GameMenuView);
+        };
+
+        // Aksi Exit: Kembali ke Main Menu
+        Runnable onExit = this::showMainMenu;
+
+        GameMenuView menuView = new GameMenuView(onResume, onExit);
+        
+        // Efek Blur ke Background
+        gameRoot.setEffect(new GaussianBlur(10));
+        
+        globalGameRoot.getChildren().add(menuView);
     }
 
     // --- BAGIAN 3: HELPER UI (Dari Faris) ---
 
     private HBox createHeader(GameManager gm) {
         HBox header = new HBox(15);
-        header.setAlignment(Pos.CENTER);
-        header.setPadding(new Insets(15));
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(10, 20, 10, 20));
         header.setStyle("-fx-background-color: #1f1f1f; -fx-border-color: #333; -fx-border-width: 0 0 2 0;");
+
+        HBox turnInfoBox = new HBox(10);
+        turnInfoBox.setAlignment(Pos.CENTER);
 
         Label titleLabel = new Label("CURRENT TURN:");
         titleLabel.setTextFill(Color.GRAY);
@@ -236,7 +228,27 @@ public class MainApp extends Application {
         turnLabel = new Label();
         turnLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
 
-        header.getChildren().addAll(titleLabel, turnIndicatorCircle, turnLabel);
+        turnInfoBox.getChildren().addAll(titleLabel, turnIndicatorCircle, turnLabel);
+
+        Pane spacer = new Pane();
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+        // Tombol Menu
+        Button btnMenu = new Button("MENU");
+        btnMenu.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-border-color: gray; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;");
+        btnMenu.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        btnMenu.setOnAction(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            showInGameMenu();
+        });
+        
+        Pane leftSpacer = new Pane();
+        javafx.scene.layout.HBox.setHgrow(leftSpacer, javafx.scene.layout.Priority.ALWAYS);
+        
+        Pane rightSpacer = new Pane();
+        javafx.scene.layout.HBox.setHgrow(rightSpacer, javafx.scene.layout.Priority.ALWAYS);
+
+        header.getChildren().addAll(leftSpacer, turnInfoBox, rightSpacer, btnMenu);
         return header;
     }
 

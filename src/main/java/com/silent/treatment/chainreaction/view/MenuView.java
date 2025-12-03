@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.silent.treatment.chainreaction.core.SoundManager;
+
 public class MenuView extends StackPane {
 
     private final Runnable onNewGame;
@@ -169,6 +171,12 @@ public class MenuView extends StackPane {
             selectedIndex = menuButtons.indexOf(btn);
             updateSelectionVisuals();
         });
+
+        btn.setOnMouseClicked(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            action.run();
+        });
+
         return btn;
     }
 
@@ -185,7 +193,11 @@ public class MenuView extends StackPane {
         border.setArcHeight(10);
 
         StackPane btn = new StackPane(border, txt);
-        btn.setOnMouseClicked(e -> action.run());
+        // btn.setOnMouseClicked(e -> action.run());
+        btn.setOnMouseClicked(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            action.run();
+        });
 
         btn.setOnMouseEntered(e -> {
             border.setFill(color);
