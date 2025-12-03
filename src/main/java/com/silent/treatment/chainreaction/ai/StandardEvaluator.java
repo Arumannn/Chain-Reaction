@@ -29,12 +29,14 @@ public class StandardEvaluator implements BoardEvaluator {
                     cellValue += 25.0;
                 }
 
+                // Reduced corner bonus untuk variasi move (tidak selalu pojok)
                 if (cell.getCriticalMass() == 2)
-                    cellValue += 20.0;
+                    cellValue += 5.0; // Corner: bonus dikurangi dari 20 → 5
                 else if (cell.getCriticalMass() == 3)
-                    cellValue += 10.0;
+                    cellValue += 3.0; // Edge: bonus dikurangi dari 10 → 3
 
-                cellValue += (i + j) * 0.1;
+                // Tambah variasi based on position (spread move)
+                cellValue += (i + j) * 0.5;
 
                 for (Cell neighbor : cell.getNeighbors()) {
                     if (neighbor.getOwner() != null && neighbor.getOwner().equals(enemyPlayer)) {
