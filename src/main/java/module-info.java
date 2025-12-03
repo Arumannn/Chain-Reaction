@@ -3,6 +3,7 @@ module com.silent.treatment.chainreaction {
     requires javafx.fxml;
     requires javafx.web;
     requires javafx.media;
+    requires transitive javafx.graphics;
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;

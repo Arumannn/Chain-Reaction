@@ -7,13 +7,10 @@ import javafx.scene.layout.Pane;
 
 import java.util.*;
 
-/**
- * Debug helper untuk melacak masalah animasi, terutama ketika multiple explosions
- * menargetkan cell yang sama.
- */
 public class AnimationDebugger {
     
-    private static final boolean DEBUG_ENABLED = true; // Set false untuk disable debug
+    // [CHANGED] Set to false to disable debug reports
+    private static final boolean DEBUG_ENABLED = false; 
     
     // Tracking data
     private static Map<Cell, List<CoordinateRecord>> cellCoordinateHistory = new HashMap<>();
@@ -21,9 +18,6 @@ public class AnimationDebugger {
     private static Map<String, Long> timingRecords = new HashMap<>();
     private static int coordinateCalculationCount = 0;
     
-    /**
-     * Record koordinat yang dihitung untuk cell tertentu.
-     */
     public static void recordCoordinate(Cell cell, Node cellView, Pane container, 
                                        Point2D calculatedPoint, String method) {
         if (!DEBUG_ENABLED) return;
@@ -37,12 +31,11 @@ public class AnimationDebugger {
         
         cellCoordinateHistory.computeIfAbsent(cell, k -> new ArrayList<>()).add(record);
         
-        // Log jika ada multiple calculations untuk cell yang sama dalam waktu singkat
         List<CoordinateRecord> history = cellCoordinateHistory.get(cell);
         if (history.size() > 1) {
             CoordinateRecord prev = history.get(history.size() - 2);
             long timeDiff = timestamp - prev.timestamp;
-            if (timeDiff < 100) { // Less than 100ms
+            if (timeDiff < 100) {
                 System.out.println(String.format(
                     "[DEBUG] Multiple coordinate calculations for Cell(%d,%d) within %dms:\n" +
                     "  Previous: %s at count %d\n" +
@@ -58,9 +51,6 @@ public class AnimationDebugger {
         }
     }
     
-    /**
-     * Record explosion animation yang dibuat.
-     */
     public static void recordExplosion(Cell explodingCell, List<Cell> targetCells, 
                                       String animationType, long timestamp) {
         if (!DEBUG_ENABLED) return;
@@ -69,16 +59,14 @@ public class AnimationDebugger {
             explodingCell, targetCells, animationType, timestamp
         );
         
-        // Track untuk setiap target cell
         for (Cell target : targetCells) {
             cellExplosionHistory.computeIfAbsent(target, k -> new ArrayList<>()).add(record);
             
-            // Check jika cell ini menerima multiple explosions
             List<ExplosionRecord> explosions = cellExplosionHistory.get(target);
             if (explosions.size() > 1) {
                 ExplosionRecord prev = explosions.get(explosions.size() - 2);
                 long timeDiff = timestamp - prev.timestamp;
-                if (timeDiff < 200) { // Less than 200ms
+                if (timeDiff < 200) {
                     System.out.println(String.format(
                         "[DEBUG] ⚠️ MULTIPLE EXPLOSIONS to Cell(%d,%d) within %dms:\n" +
                         "  Explosion 1: From Cell(%d,%d) at %d\n" +
@@ -92,9 +80,6 @@ public class AnimationDebugger {
         }
     }
     
-    /**
-     * Record timing event.
-     */
     public static void recordTiming(String event, long timestamp) {
         if (!DEBUG_ENABLED) return;
         
@@ -109,9 +94,6 @@ public class AnimationDebugger {
         timingRecords.put(event, timestamp);
     }
     
-    /**
-     * Print summary untuk cell tertentu.
-     */
     public static void printCellSummary(Cell cell) {
         if (!DEBUG_ENABLED) return;
         
@@ -120,7 +102,6 @@ public class AnimationDebugger {
             cell.getX(), cell.getY()
         ));
         
-        // Coordinate history
         List<CoordinateRecord> coords = cellCoordinateHistory.get(cell);
         if (coords != null && !coords.isEmpty()) {
             System.out.println("  Coordinate Calculations: " + coords.size());
@@ -134,7 +115,6 @@ public class AnimationDebugger {
             }
         }
         
-        // Explosion history
         List<ExplosionRecord> explosions = cellExplosionHistory.get(cell);
         if (explosions != null && !explosions.isEmpty()) {
             System.out.println("  Explosions Received: " + explosions.size());
@@ -147,13 +127,9 @@ public class AnimationDebugger {
                 ));
             }
         }
-        
         System.out.println();
     }
     
-    /**
-     * Clear all debug data.
-     */
     public static void clear() {
         cellCoordinateHistory.clear();
         cellExplosionHistory.clear();
@@ -161,9 +137,6 @@ public class AnimationDebugger {
         coordinateCalculationCount = 0;
     }
     
-    /**
-     * Print all problematic cells (cells with multiple explosions or coordinate inconsistencies).
-     */
     public static void printProblematicCells() {
         if (!DEBUG_ENABLED) return;
         
@@ -179,7 +152,6 @@ public class AnimationDebugger {
                     cell.getX(), cell.getY(), explosions.size()
                 ));
                 
-                // Check coordinate consistency
                 List<CoordinateRecord> coords = cellCoordinateHistory.get(cell);
                 if (coords != null && coords.size() > 1) {
                     Set<Point2D> uniqueCoords = new HashSet<>();
@@ -198,11 +170,9 @@ public class AnimationDebugger {
                 }
             }
         }
-        
         System.out.println();
     }
     
-    // Inner classes untuk tracking
     private static class CoordinateRecord {
         Cell cell;
         Point2D point;
@@ -233,4 +203,3 @@ public class AnimationDebugger {
         }
     }
 }
-

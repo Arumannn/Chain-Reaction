@@ -3,6 +3,8 @@ package com.silent.treatment.chainreaction.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.silent.treatment.chainreaction.view.GameObserver;
+
 public class Board {
     private int width;
     private int height;
@@ -62,19 +64,32 @@ public class Board {
     }
 
     public int getPlayerOrbCount(Player player) {
-    int count = 0;
-    for (int i = 0; i < width; i++) {
-        for (int j = 0; j < height; j++) {
-            if (grid[i][j].getOwner() != null && grid[i][j].getOwner().equals(player)) {
-                count += grid[i][j].getOrbs();
+        int count = 0;
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (grid[i][j] != null && grid[i][j].getOwner() != null
+                        && grid[i][j].getOwner().equals(player)) {
+                    count += grid[i][j].getOrbs();
+                }
             }
         }
+        return count;
     }
-    return count;
-}
 
     public Cell getCell(int x, int y) { return grid[x][y]; }
     public int getWidth() { return width; }
     public int getHeight() { return height; }
-    
+
+    public void attachGlobalObserver(GameObserver observer) {
+        if (observer == null) {
+            return;
+        }
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                if (grid[i][j] != null) {
+                    grid[i][j].attach(observer);
+                }
+            }
+        }
+    }
 }

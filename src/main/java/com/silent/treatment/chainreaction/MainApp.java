@@ -10,10 +10,7 @@ import com.silent.treatment.chainreaction.view.SetupView;
 import com.silent.treatment.chainreaction.view.GameOverView;
 import com.silent.treatment.chainreaction.view.GameMenuView;
 import com.silent.treatment.chainreaction.view.TutorialView;
-import com.silent.treatment.chainreaction.view.DifficultySelectionView;
-import com.silent.treatment.chainreaction.view.DifficultySelectionView.Difficulty;
 import com.silent.treatment.chainreaction.controller.AIController;
-import com.silent.treatment.chainreaction.model.MapType;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -33,8 +30,6 @@ import javafx.stage.Stage;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region; // Untuk header spacer
-import javafx.scene.control.Button;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 import java.util.List;
@@ -95,6 +90,9 @@ public class MainApp extends Application {
         // 2. Init Controller & View
         GameController controller = new GameController();
         gameBoardView = new GridPanel(gm.getBoard(), controller);
+        gm.getBoard().attachGlobalObserver(cell -> {
+            javafx.application.Platform.runLater(() -> updateGameInfo(gm));
+        });
 
         // 3. Init AI Controllers untuk setiap bot player
         List<AIController> aiControllers = new ArrayList<>();
@@ -146,6 +144,7 @@ public class MainApp extends Application {
                 gameBoardView.startAnimationProcessing();
             } 
         });
+        controller.setOnGameStateUpdated(() -> updateGameInfo(gm));
         // [LOGIC GAME OVER]
         controller.setOnGameOver(() -> {
             Player winner = gm.getWinner();

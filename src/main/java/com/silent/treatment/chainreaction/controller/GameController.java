@@ -1,15 +1,23 @@
 package com.silent.treatment.chainreaction.controller;
 
 import com.silent.treatment.chainreaction.core.GameManager;
+import com.silent.treatment.chainreaction.core.ExplosionQueue;
 import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
+import javafx.application.Platform;
 
 public class GameController {
 
-    protected Runnable onTurnChanged; // Callback untuk update UI luar
+    protected Runnable onTurnChanged; 
     protected Runnable onGameOver;
-    protected Runnable onAnimationStart; // Callback untuk memulai animasi
-    
+    protected Runnable onAnimationStart; 
+    protected Runnable onGameStateUpdated; 
+
+    public GameController() {
+        // Callback ini dipanggil saat animasi ledakan selesai
+        ExplosionQueue.getInstance().setOnQueueEmpty(this::checkGameStatus);
+    }
+
     public void setOnTurnChanged(Runnable onTurnChanged) {
         this.onTurnChanged = onTurnChanged;
     }
@@ -17,52 +25,89 @@ public class GameController {
     public void setOnGameOver(Runnable onGameOver) {
         this.onGameOver = onGameOver;
     }
-    
+
     public void setOnAnimationStart(Runnable onAnimationStart) {
         this.onAnimationStart = onAnimationStart;
     }
 
+    public void setOnGameStateUpdated(Runnable onGameStateUpdated) {
+        this.onGameStateUpdated = onGameStateUpdated;
+    }
 
     public void handleCellClick(Cell cell) {
         GameManager gm = GameManager.getInstance();
-        
-        if(gm.isGameOver()){
-            System.out.println("Game is Over. Please Reset");
-        }
 
+        // [CHANGED] Removed the 'isProcessing' check to allow moves during explosions
+        // if (ExplosionQueue.getInstance().isProcessing()) { return; }
+
+        if (gm.isGameOver()) {
+            System.out.println("Game is Over. Please Reset");
+            return;
+        }
 
         Player currentPlayer = gm.getCurrentPlayer();
 
-        // Validasi Move
         if (cell.getOwner() == null || cell.getOwner().equals(currentPlayer)) {
-            // Eksekusi Logika
+            // 1. Eksekusi Move
             cell.addOrb(currentPlayer, gm.getBoard());
-            
-            // Trigger animasi jika ada explosions yang di-queue
+            currentPlayer.setHasPlayed(true); 
+            notifyGameStateUpdated();
+
+            // 2. Trigger Animasi (jika ada ledakan)
             if (onAnimationStart != null) {
                 onAnimationStart.run();
             }
 
-            gm.checkEliminations();
-            Player winner = gm.checkWinner();
-
-            if (winner != null) {
-                // Handle Game Over
-                if (onGameOver != null) {
-                    onGameOver.run();
-                }
-            } else {
-                // 3. Ganti Giliran jika game belum selesai
-                gm.nextTurn();
-                
-                // Beritahu UI kalau giliran berubah
-                if (onTurnChanged != null) {
-                    onTurnChanged.run();
-                }
+            // [CHANGED] IMMEDIATE TURN SWITCH
+            // Kita langsung oper giliran tanpa menunggu ledakan selesai
+            gm.nextTurn();
+            if (onTurnChanged != null) {
+                onTurnChanged.run();
             }
 
         } else {
             System.out.println("Invalid Move! Cell owned by " + cell.getOwner().getName());
+        }
+    }
+
+    /**
+     * Dipanggil ketika serangkaian ledakan selesai.
+     * Cek apakah ada yang mati atau menang.
+     */
+    private void checkGameStatus() {
+        Platform.runLater(() -> {
+            GameManager gm = GameManager.getInstance();
+
+            if (gm.isGameOver()) return;
+
+            // 1. Cek Eliminasi (Siapa yang orbs-nya habis)
+            gm.checkEliminations();
+            notifyGameStateUpdated();
+            
+            // 2. Cek Pemenang
+            Player winner = gm.checkWinner();
+
+            if (winner != null) {
+                if (onGameOver != null) {
+                    onGameOver.run();
+                }
+            } else {
+                // [NEW] Cek Keadaan Khusus:
+                // Jika pemain yang "Sedang Jalan" (CurrentPlayer) tiba-tiba mati 
+                // karena ledakan susulan dari pemain sebelumnya, kita harus skip dia.
+                if (!gm.getCurrentPlayer().isAlive()) {
+                    gm.nextTurn(); 
+                    if (onTurnChanged != null) {
+                        onTurnChanged.run();
+                    }
+                }
+            }
+        });
+    }
+
+    private void notifyGameStateUpdated() {
+        if (onGameStateUpdated != null) {
+            Platform.runLater(onGameStateUpdated);
         }
     }
 }

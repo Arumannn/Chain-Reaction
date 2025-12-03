@@ -1,6 +1,7 @@
 package com.silent.treatment.chainreaction.controller;
 
 import com.silent.treatment.chainreaction.core.GameManager;
+import com.silent.treatment.chainreaction.core.ExplosionQueue;
 import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.model.Board;
@@ -29,6 +30,9 @@ public class TutorialController extends GameController {
     private Runnable onGameOver;
 
     public TutorialController(Consumer<String> instructionCallback, Runnable onFinishCallback) {
+        // Disable GameController's auto-turn logic for tutorial to prevent double turns
+        ExplosionQueue.getInstance().setOnQueueEmpty(null);
+
         this.instructionCallback = instructionCallback;
         this.onFinishCallback = onFinishCallback;
         this.currentPhase = Phase.DEMO_2_EXPLOSION;
