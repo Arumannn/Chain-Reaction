@@ -62,10 +62,15 @@ public class AIController {
 
         try {
             GameManager gm = GameManager.getInstance();
+
+            if (gm.getPlayers() == null || gm.getPlayers().isEmpty()) {
+                System.out.println("[AI] Game reset detected. Cancelling move.");
+                return;
+            }
+
             Player aiPlayer = gm.getCurrentPlayer();
 
             if (!aiPlayer.getName().contains("AI Bot")) {
-
                 return;
             }
 
@@ -90,7 +95,6 @@ public class AIController {
                 // Gunakan jalur khusus AI agar tetap bisa bermain meskipun human sudah kalah
                 gameController.handleAICellClick(targetCell);
             } else {
-
                 System.err.println("AI Warning: No valid move found for " + aiPlayer.getName());
 
                 gm.nextTurn();
@@ -99,7 +103,6 @@ public class AIController {
                 }
             }
         } finally {
-
             isExecuting = false;
         }
     }
