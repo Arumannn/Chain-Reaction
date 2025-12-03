@@ -157,25 +157,10 @@ public class MainApp extends Application {
         });
         controller.setOnGameStateUpdated(() -> updateGameInfo(gm));
         // [LOGIC GAME OVER]
-        controller.setOnGameOver(() -> {
-            Player winner = gm.getWinner();
-
-            // Aksi saat tombol "VIEW BOARD" ditekan
-            Runnable onCloseDialog = () -> {
-                gameRoot.setEffect(null); // Hapus efek blur
-                globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance); //current
-                // globalGameRoot.getChildren().removeIf(node -> node instanceof GameOverView); //incomming
-;
-            };
-
-            // Buat View Game Over
-            GameOverView gameOverView = new GameOverView(winner, this::showMainMenu, onCloseDialog);
-
-            // Beri efek Blur ke game di belakangnya
-            gameRoot.setEffect(new GaussianBlur(10));
-
-            // Tambahkan ke globalGameRoot yang sudah ada
-            globalGameRoot.getChildren().add(gameOverView);
+        controller.setOnGameOver(() -> showGameOverDialog(gm.getWinner()));
+        controller.setOnHumansDefeated(() -> {
+            Player botDisplay = gm.getCurrentPlayer();
+            showGameOverDialog(botDisplay);
         });
 
         // Init Data Awal + status lock input sesuai pemain pertama
@@ -196,6 +181,24 @@ public class MainApp extends Application {
         // Gunakan gameRoot sebagai scene awal
         primaryStage.setScene(new Scene(globalGameRoot, winWidth, winHeight));
         primaryStage.centerOnScreen();
+    }
+
+    private void showGameOverDialog(Player playerToDisplay) {
+        if (playerToDisplay == null) return;
+
+        // Pastikan hanya ada satu GameOverView
+        globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance);
+
+        // Aksi saat tombol "VIEW BOARD" ditekan
+        Runnable onCloseDialog = () -> {
+            gameRoot.setEffect(null); // Hapus efek blur
+            globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance);
+        };
+
+        GameOverView view = new GameOverView(playerToDisplay, this::showMainMenu, onCloseDialog);
+
+        gameRoot.setEffect(new GaussianBlur(10));
+        globalGameRoot.getChildren().add(view);
     }
 
     // --- LOGIC MENU PAUSE ---

@@ -10,6 +10,7 @@ public class GameController {
 
     protected Runnable onTurnChanged; 
     protected Runnable onGameOver;
+    protected Runnable onHumansDefeated;
     protected Runnable onAnimationStart; 
     protected Runnable onGameStateUpdated; 
 
@@ -19,6 +20,7 @@ public class GameController {
 
     public void setOnTurnChanged(Runnable onTurnChanged) { this.onTurnChanged = onTurnChanged; }
     public void setOnGameOver(Runnable onGameOver) { this.onGameOver = onGameOver; }
+    public void setOnHumansDefeated(Runnable onHumansDefeated) { this.onHumansDefeated = onHumansDefeated; }
     public void setOnAnimationStart(Runnable onAnimationStart) { this.onAnimationStart = onAnimationStart; }
     public void setOnGameStateUpdated(Runnable onGameStateUpdated) { this.onGameStateUpdated = onGameStateUpdated; }
 
@@ -82,6 +84,11 @@ public class GameController {
             notifyGameStateUpdated();
             
             Player winner = gm.checkWinner();
+
+            // Cek apakah semua pemain human sudah kalah
+            if (gm.consumeHumansDefeatedFlag() && onHumansDefeated != null) {
+                onHumansDefeated.run();
+            }
 
             if (winner != null) {
                 if (onGameOver != null) onGameOver.run();

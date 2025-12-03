@@ -28,10 +28,13 @@ public class GameOverView extends StackPane {
         dialog.setAlignment(Pos.CENTER);
         dialog.setPadding(new Insets(30));
 
+        // Deteksi apakah pemenang adalah BOT (lose condition untuk human)
+        boolean isBotWinner = winner.getName() != null && winner.getName().toLowerCase().contains("ai bot");
+
         // Warna border menyesuaikan warna pemenang
         String hexColor = toHexString(winner.getColor());
         dialog.setStyle(
-                "-fx-background-color: #1e1e1e;" +
+                (isBotWinner ? "-fx-background-color: #1a0a0a;" : "-fx-background-color: #1e1e1e;") +
                         "-fx-border-color: " + hexColor + ";" +
                         "-fx-border-width: 3;" +
                         "-fx-border-radius: 20;" +
@@ -40,16 +43,23 @@ public class GameOverView extends StackPane {
         );
 
         // 3. Teks Pemenang
-        Label lblTitle = new Label("WINNER!");
-        lblTitle.setTextFill(Color.WHITE);
+        Label lblTitle = new Label(isBotWinner ? "DEFEAT" : "WINNER!");
+        lblTitle.setTextFill(isBotWinner ? Color.web("#ff4c4c") : Color.WHITE);
         lblTitle.setFont(Font.font("Impact", 40));
 
-        Label lblName = new Label(winner.getName().toUpperCase());
-        lblName.setTextFill(winner.getColor());
-        lblName.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        Label lblName = null;
+        if (!isBotWinner) {
+            lblName = new Label(winner.getName().toUpperCase());
+            lblName.setTextFill(winner.getColor());
+            lblName.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        }
 
-        Label lblDesc = new Label("Congratulations! The chain reaction is complete.");
-        lblDesc.setTextFill(Color.LIGHTGRAY);
+        Label lblDesc = new Label(
+                isBotWinner
+                        ? "All human players have been eliminated.\nThe AI has dominated the chain reaction."
+                        : "Congratulations! The chain reaction is complete."
+        );
+        lblDesc.setTextFill(isBotWinner ? Color.web("#ffb3b3") : Color.LIGHTGRAY);
         lblDesc.setWrapText(true);
 
         // 4. Tombol Aksi
@@ -64,7 +74,11 @@ public class GameOverView extends StackPane {
 
         buttonBox.getChildren().addAll(btnView, btnBack);
 
-        dialog.getChildren().addAll(lblTitle, lblName, lblDesc, buttonBox);
+        if (isBotWinner) {
+            dialog.getChildren().addAll(lblTitle, lblDesc, buttonBox);
+        } else {
+            dialog.getChildren().addAll(lblTitle, lblName, lblDesc, buttonBox);
+        }
         this.getChildren().add(dialog);
     }
 

@@ -19,6 +19,7 @@ public class GameManager {
     private int totalTurns;
     private boolean isGameOver;
     private Player winner;
+    private boolean humansDefeatedFlag;
 
     // Set to false for production/normal gameplay
     private static final boolean DEBUG_MODE = false;
@@ -42,6 +43,7 @@ public class GameManager {
         this.totalTurns = 0;
         this.isGameOver = false;
         this.winner = null;
+        this.humansDefeatedFlag = false;
         for (Player p : players) {
             p.setAlive(true);
             p.setHasPlayed(false); // Reset status sudah main
@@ -113,14 +115,33 @@ public class GameManager {
         int activePlayers = 0;
         Player potentialWinner = null;
 
+        boolean anyHumanAlive = false;
+        boolean anyBotAlive = false;
+        Player firstAliveBot = null;
+
         for (Player p : players) {
             if (p.isAlive()) {
                 activePlayers++;
                 potentialWinner = p;
+
+                boolean isBot = isBotPlayer(p);
+                if (isBot) {
+                    anyBotAlive = true;
+                    if (firstAliveBot == null) {
+                        firstAliveBot = p;
+                    }
+                } else {
+                    anyHumanAlive = true;
+                }
             }
         }
 
-        // Jika hanya 1 pemain tersisa, dia menang
+        // Kondisi LOSE: semua pemain human mati tetapi masih ada bot hidup
+        if (!anyHumanAlive && anyBotAlive) {
+            humansDefeatedFlag = true; // Game terus berjalan, tapi tandai defeat
+        }
+
+        // Kondisi menang normal: hanya 1 pemain (human atau bot) yang tersisa
         if (activePlayers == 1) {
             this.isGameOver = true;
             this.winner = potentialWinner;
@@ -129,6 +150,27 @@ public class GameManager {
         }
 
         return null;
+    }
+
+    /**
+     * Sementara: identifikasi bot berdasarkan pola nama.
+     * Semua pemain dengan nama yang mengandung "AI Bot" dianggap bot.
+     */
+    private boolean isBotPlayer(Player p) {
+        if (p == null || p.getName() == null) return false;
+        return p.getName().toLowerCase().contains("ai bot");
+    }
+
+    /**
+     * Mengembalikan true sekali saat semua human telah dieliminasi.
+     * Flag akan otomatis di-reset setelah dibaca.
+     */
+    public boolean consumeHumansDefeatedFlag() {
+        if (humansDefeatedFlag) {
+            humansDefeatedFlag = false;
+            return true;
+        }
+        return false;
     }
 
     public int getPlayerOrbCount(Player player) {
