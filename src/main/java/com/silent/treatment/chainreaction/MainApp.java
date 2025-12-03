@@ -121,22 +121,33 @@ public class MainApp extends Application {
         // --- Right Sidebar ---
         gameRoot.setRight(createPlayerSidebar(gm));
 
-        // 5. Hubungkan Controller dengan UI - dengan AI support
-        controller.setOnTurnChanged(() -> {
+        // Helper lambda untuk menangani perubahan giliran (termasuk lock input saat bot)
+        Runnable handleTurnChanged = () -> {
             updateGameInfo(gm);
 
-            // Check if current player is bot
             int currentIndex = gm.getPlayers().indexOf(gm.getCurrentPlayer());
             AIController currentAI = aiControllers.get(currentIndex);
 
-            if (currentAI != null) { // Bot's turn
+            // Jika current player adalah bot, kunci input pemain dan jalankan AI
+            if (currentAI != null) {
+                if (gameBoardView != null) {
+                    gameBoardView.setPlayerInteractionEnabled(false);
+                }
                 javafx.application.Platform.runLater(() -> {
                     PauseTransition delay = new PauseTransition(Duration.millis(1000));
                     delay.setOnFinished(e -> currentAI.performMove());
                     delay.play();
                 });
+            } else {
+                // Giliran pemain manusia: buka kembali input
+                if (gameBoardView != null) {
+                    gameBoardView.setPlayerInteractionEnabled(true);
+                }
             }
-        });
+        };
+
+        // 5. Hubungkan Controller dengan UI - dengan AI support
+        controller.setOnTurnChanged(handleTurnChanged);
 
         // Setup animation callback
         controller.setOnAnimationStart(() -> {
@@ -167,8 +178,8 @@ public class MainApp extends Application {
             globalGameRoot.getChildren().add(gameOverView);
         });
 
-        // Init Data Awal
-        updateGameInfo(gm);
+        // Init Data Awal + status lock input sesuai pemain pertama
+        handleTurnChanged.run();
 
         // Setup globalGameRoot PERTAMA (sebelum gameRoot masuk scene graph)
         globalGameRoot = new StackPane(gameRoot);

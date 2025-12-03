@@ -33,6 +33,11 @@ public class GridPanel extends StackPane {
     private Pane animationLayer; // Layer untuk animasi orb movement
     private AnimationManager animationManager;
     private Map<Cell, Node> cellViewMap; // Mapping Cell ke CellView
+    /**
+     * Flag untuk mengunci input pemain saat giliran bot.
+     * Hanya klik pemain yang akan diblokir – AI tetap memanggil GameController langsung.
+     */
+    private boolean playerInputEnabled = true;
 
     public GridPanel(Board board, GameController controller) {
         this.controller = controller;
@@ -60,6 +65,14 @@ public class GridPanel extends StackPane {
         
         // Setup AnimationManager
         animationManager = new AnimationManager(animationLayer, cellViewMap);
+    }
+
+    /**
+     * Mengatur apakah pemain (mouse) boleh berinteraksi dengan grid.
+     * Digunakan untuk mengunci input saat giliran bot.
+     */
+    public void setPlayerInteractionEnabled(boolean enabled) {
+        this.playerInputEnabled = enabled;
     }
     
     /**
@@ -173,13 +186,21 @@ public class GridPanel extends StackPane {
             this.getChildren().addAll(border, ballContainer);
 
             this.setOnMouseEntered(e -> {
+                if (!playerInputEnabled) return;
                 if(cell.getOwner() == null) border.setFill(Color.valueOf("#383838"));
             });
             this.setOnMouseExited(e -> {
+                if (!playerInputEnabled) return;
                 if(cell.getOwner() == null) border.setFill(Color.valueOf("#2b2b2b"));
             });
 
-            this.setOnMouseClicked(e -> controller.handleCellClick(cell));
+            this.setOnMouseClicked(e -> {
+                // Blok semua input pemain saat input dikunci (giliran bot)
+                if (!playerInputEnabled) {
+                    return;
+                }
+                controller.handleCellClick(cell);
+            });
         }
 
         /**
