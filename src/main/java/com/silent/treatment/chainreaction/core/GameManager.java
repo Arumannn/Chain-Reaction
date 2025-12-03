@@ -223,4 +223,19 @@ public class GameManager {
     public Player getWinner() {
         return winner;
     }
+
+    /**
+     * Reset penuh state GameManager saat kembali ke Main Menu.
+     * Board & daftar pemain dibuang, turn dan flag di-nol-kan.
+     */
+    public void reset() {
+        this.board = null;
+        this.players = new ArrayList<>();
+        this.currentPlayerIndex = 0;
+        this.totalTurns = 0;
+        this.isGameOver = false;
+        this.winner = null;
+        this.humansDefeated = false;
+        this.humansDefeatedSignal = false;
+    }
 }

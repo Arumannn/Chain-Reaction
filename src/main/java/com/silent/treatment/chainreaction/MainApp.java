@@ -3,6 +3,7 @@ package com.silent.treatment.chainreaction;
 import com.silent.treatment.chainreaction.controller.GameController;
 import com.silent.treatment.chainreaction.core.GameManager;
 import com.silent.treatment.chainreaction.core.SoundManager;
+import com.silent.treatment.chainreaction.core.ExplosionQueue;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.GridPanel;
 import com.silent.treatment.chainreaction.view.MenuView;
@@ -61,6 +62,9 @@ public class MainApp extends Application {
     // --- BAGIAN 1: NAVIGASI (Dari Revan) ---
 
     private void showMainMenu() {
+        // Reset penuh state game setiap kembali ke Main Menu
+        resetGameState();
+
         MenuView menuView = new MenuView(
                 () -> showGameSetup(), // New Game
                 () -> System.exit(0), // Exit
@@ -199,6 +203,25 @@ public class MainApp extends Application {
 
         gameRoot.setEffect(new GaussianBlur(10));
         globalGameRoot.getChildren().add(view);
+    }
+
+    /**
+     * Reset semua state permainan: turn, board, explosion queue, dan animasi.
+     * Dipanggil setiap kali kembali ke Main Menu.
+     */
+    private void resetGameState() {
+        // Hentikan BGM game jika ada
+        SoundManager.getInstance().stopBGM();
+
+        // Bersihkan animasi & explosion queue
+        if (gameBoardView != null) {
+            gameBoardView.clearAnimations();
+        } else {
+            ExplosionQueue.getInstance().clear();
+        }
+
+        // Reset state core game manager
+        GameManager.getInstance().reset();
     }
 
     // --- LOGIC MENU PAUSE ---

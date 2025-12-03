@@ -104,4 +104,19 @@ public class SoundManager {
     
     public boolean isBgmMuted() { return isBgmMuted; }
     public boolean isSfxMuted() { return isSfxMuted; }
-}
+
+    /**
+     * Menghentikan BGM yang sedang berjalan (digunakan saat reset ke Main Menu).
+     */
+    public void stopBGM() {
+        try {
+            if (bgmPlayer != null) {
+                bgmPlayer.stop();
+                bgmPlayer.dispose();
+                bgmPlayer = null;
+            }
+        } catch (Exception e) {
+            // ignore error stop BGM
+        }
+    }
+} 
