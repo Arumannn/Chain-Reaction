@@ -35,7 +35,7 @@ public class SettingsView extends StackPane {
 
         // Main Panel
         VBox mainPanel = new VBox(30);
-        mainPanel.setMaxWidth(500);
+        mainPanel.setMaxWidth(350);
         mainPanel.setMaxHeight(400);
         mainPanel.setAlignment(Pos.CENTER);
         mainPanel.setStyle(
