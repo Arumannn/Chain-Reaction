@@ -99,12 +99,16 @@ public class BoardSimulator {
             return new BoardState(newCells, width, height);
         }
 
+        /**
+         * Evaluate board state untuk MULTIPLAYER (2-8 player).
+         * Parameter enemyPlayer diabaikan - aggregate SEMUA non-AI players.
+         */
         public double evaluate(Player aiPlayer, Player enemyPlayer) {
             double score = 0;
             int aiOrbs = 0;
-            int enemyOrbs = 0;
+            int totalEnemyOrbs = 0; // Aggregate ALL enemies (not just one)
             int aiCells = 0;
-            int enemyCells = 0;
+            int totalEnemyCells = 0; // Aggregate ALL enemies (not just one)
 
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
@@ -125,24 +129,27 @@ public class BoardSimulator {
                         else if (cell.criticalMass == 3)
                             score += 3.0;
 
-                    } else if (cell.owner.equals(enemyPlayer)) {
-                        enemyOrbs += cell.orbs;
-                        enemyCells++;
+                    } else {
+                        // ✅ ANY non-AI player = enemy (support 2-8 players)
+                        totalEnemyOrbs += cell.orbs;
+                        totalEnemyCells++;
 
                         if (cell.orbs == cell.criticalMass - 1) {
-                            score -= 15.0;
+                            score -= 15.0; // Threat dari musuh MANAPUN
                         }
                     }
                 }
             }
 
-            score += (aiOrbs - enemyOrbs) * 10.0;
-            score += (aiCells - enemyCells) * 5.0;
+            // Score = AI dominance vs COLLECTIVE enemy strength
+            score += (aiOrbs - totalEnemyOrbs) * 10.0;
+            score += (aiCells - totalEnemyCells) * 5.0;
 
-            if (enemyOrbs == 0 && enemyCells == 0) {
-                score += 10000.0;
+            // Win/lose conditions
+            if (totalEnemyOrbs == 0 && totalEnemyCells == 0) {
+                score += 10000.0; // AI won (all enemies eliminated)
             } else if (aiOrbs == 0 && aiCells == 0) {
-                score -= 10000.0;
+                score -= 10000.0; // AI lost
             }
 
             return score;

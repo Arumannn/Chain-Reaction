@@ -8,48 +8,43 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class AIEasy {
+/**
+ * AI Easy - Greedy strategy dengan multiplayer support (2-8 player).
+ * Menggunakan MinimaxEngine depth 1 dan evaluasi terhadap SEMUA musuh.
+ */
+public class AIEasy extends AIBase {
 
     private final MinimaxEngine engine;
     private final Random random;
 
-    public AIEasy() {        
-        this.engine = new MinimaxEngine(new StandardEvaluator(), 1);
+    public AIEasy() {
+        this.engine = new MinimaxEngine(1); // Depth 1 for greedy approach
         this.random = new Random();
     }
 
+    @Override
     public Cell chooseMove(GameManager gm) {
-        Player ai = gm.getCurrentPlayer();
-        
-        Player enemy = null;
-        for (Player p : gm.getPlayers()) {
-            if (!p.equals(ai) && p.isAlive()) {
-                enemy = p;
-                break;
-            }
-        }
-       
-        if (enemy == null) {
-            if (gm.getPlayers().size() > 1) {
-                enemy = gm.getPlayers().get(0).equals(ai) ? gm.getPlayers().get(1) : gm.getPlayers().get(0);
-            } else {               
-                return findAnyValidCell(gm, ai);
-            }
+        Player aiPlayer = gm.getCurrentPlayer();
+
+        // Kumpulkan semua valid moves
+        List<Cell> validMoves = collectValidMoves(gm, aiPlayer);
+
+        if (validMoves.isEmpty()) {
+            return null;
         }
 
-        AIMove bestMove = null;
-        try {
-            bestMove = engine.findBestMove(gm.getBoard(), ai, enemy);
-        } catch (Exception e) {
-            System.err.println("AI Error: " + e.getMessage());
+        // Gunakan MinimaxEngine yang sudah support multiplayer
+        Cell bestMove = engine.findBestMove(gm, aiPlayer, validMoves);
+
+        if (bestMove != null) {
+            return bestMove;
         }
 
-        if (bestMove == null) {            
-            return findAnyValidCell(gm, ai);
-        }
+        // Fallback ke random move
+        return findAnyValidCell(gm, aiPlayer);
+    }
 
-        return gm.getBoard().getCell(bestMove.x, bestMove.y);}
-        private Cell findAnyValidCell(GameManager gm, Player ai) {
+    private Cell findAnyValidCell(GameManager gm, Player aiPlayer) {
         List<Cell> emptyCells = new ArrayList<>();
         List<Cell> ownCells = new ArrayList<>();
 
@@ -57,22 +52,22 @@ public class AIEasy {
             for (int y = 0; y < gm.getBoard().getHeight(); y++) {
                 Cell c = gm.getBoard().getCell(x, y);
                 if (c == null)
-                    continue; 
+                    continue;
 
                 if (c.getOwner() == null) {
                     emptyCells.add(c);
-                } else if (c.getOwner().equals(ai)) {
+                } else if (c.getOwner().equals(aiPlayer)) {
                     ownCells.add(c);
                 }
             }
         }
 
-        
+        // Prioritas: empty cells dulu
         if (!emptyCells.isEmpty()) {
             return emptyCells.get(random.nextInt(emptyCells.size()));
         }
 
-        
+        // Kalau tidak ada empty, pilih cell sendiri dengan orbs terbanyak
         if (!ownCells.isEmpty()) {
             Cell bestOwn = ownCells.get(0);
             for (Cell c : ownCells) {
@@ -83,7 +78,6 @@ public class AIEasy {
             return bestOwn;
         }
 
-        
         return null;
     }
 }

@@ -164,6 +164,14 @@ public class MinimaxEngine {
         return bestMoves.isEmpty() ? null : bestMoves.get(random.nextInt(bestMoves.size()));
     }
 
+    /**
+     * findBestMove untuk MULTIPLAYER (2-8 player) dengan DEPTH SEARCH.
+     * 
+     * Perbedaan berdasarkan maxDepth:
+     * - Depth 1 (Easy): Greedy, hanya evaluasi immediate move
+     * - Depth 2 (Medium): Simulasi 2 langkah, evaluasi counter-move musuh
+     * - Depth 3+ (Hard): Simulasi 3+ langkah, strategic planning
+     */
     public Cell findBestMove(GameManager gm, Player aiPlayer, List<Cell> validMoves) {
         if (validMoves == null || validMoves.isEmpty()) {
             return null;
@@ -175,6 +183,59 @@ public class MinimaxEngine {
         if (enemies.isEmpty()) {
             return validMoves.isEmpty() ? null : validMoves.get(0);
         }
+
+        // Jika depth 1, gunakan greedy (lebih cepat)
+        if (maxDepth == 1) {
+            return findBestMoveGreedyMultiplayer(board, aiPlayer, validMoves, enemies);
+        }
+
+        // Jika depth >= 2, gunakan minimax simulation
+        return findBestMoveWithSimulation(gm, board, aiPlayer, validMoves, enemies);
+    }
+
+    /**
+     * GREEDY approach untuk depth 1 (Easy AI).
+     * Evaluasi setiap move tanpa simulasi lanjutan.
+     */
+    private Cell findBestMoveGreedyMultiplayer(Board board, Player aiPlayer, List<Cell> validMoves,
+            List<Player> enemies) {
+        List<Cell> bestCells = new ArrayList<>();
+        double bestScore = Double.NEGATIVE_INFINITY;
+
+        for (Cell cell : validMoves) {
+            if (cell == null)
+                continue;
+
+            AIMove move = new AIMove(cell.getX(), cell.getY());
+            double score = evaluateMoveWithMultipleEnemies(board, move, aiPlayer, enemies);
+            score += random.nextDouble() * RANDOM_NOISE;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestCells.clear();
+                bestCells.add(cell);
+            } else if (Math.abs(score - bestScore) < SCORE_THRESHOLD) {
+                bestCells.add(cell);
+            }
+        }
+
+        if (!bestCells.isEmpty()) {
+            Cell chosen = bestCells.get(random.nextInt(bestCells.size()));
+            System.out.println("  ✓ Best move: (" + chosen.getX() + ", " + chosen.getY() + ") Score: "
+                    + String.format("%.1f", bestScore));
+            return chosen;
+        }
+        return null;
+    }
+
+    /**
+     * SIMULATION approach untuk depth >= 2 (Medium/Hard AI).
+     * Gunakan BoardSimulator untuk simulate moves dan evaluate hasil.
+     */
+    private Cell findBestMoveWithSimulation(GameManager gm, Board board, Player aiPlayer, List<Cell> validMoves,
+            List<Player> enemies) {
+        BoardSimulator.BoardState initialState = BoardSimulator.cloneBoard(board);
+
         List<Cell> bestCells = new ArrayList<>();
         double bestScore = Double.NEGATIVE_INFINITY;
 
@@ -184,7 +245,18 @@ public class MinimaxEngine {
 
             AIMove move = new AIMove(cell.getX(), cell.getY());
 
-            double score = evaluateMoveWithMultipleEnemies(board, move, aiPlayer, enemies);
+            // Simulate move
+            BoardSimulator.BoardState newState = BoardSimulator.simulateMove(initialState, move, aiPlayer);
+
+            // Evaluate dengan minimax (consider enemy responses)
+            double score;
+            if (maxDepth >= 2 && !enemies.isEmpty()) {
+                // Simulate enemy response (worst case for us)
+                score = evaluateStateWithEnemyResponse(newState, aiPlayer, enemies, maxDepth - 1);
+            } else {
+                // Fallback ke evaluasi langsung
+                score = newState.evaluate(aiPlayer, enemies.isEmpty() ? null : enemies.get(0));
+            }
 
             score += random.nextDouble() * RANDOM_NOISE;
 
@@ -193,12 +265,52 @@ public class MinimaxEngine {
                 bestCells.clear();
                 bestCells.add(cell);
             } else if (Math.abs(score - bestScore) < SCORE_THRESHOLD) {
-
                 bestCells.add(cell);
             }
         }
 
-        return bestCells.isEmpty() ? null : bestCells.get(random.nextInt(bestCells.size()));
+        if (!bestCells.isEmpty()) {
+            Cell chosen = bestCells.get(random.nextInt(bestCells.size()));
+            System.out.println("  ✓ Best move after simulation: (" + chosen.getX() + ", " + chosen.getY() + ") Score: "
+                    + String.format("%.1f", bestScore));
+            return chosen;
+        }
+        return null;
+    }
+
+    /**
+     * Evaluate state dengan mempertimbangkan response dari musuh.
+     * Assume worst case: musuh akan pilih move terbaik mereka.
+     */
+    private double evaluateStateWithEnemyResponse(BoardSimulator.BoardState state, Player aiPlayer,
+            List<Player> enemies, int depth) {
+        if (depth <= 0 || enemies.isEmpty()) {
+            return state.evaluate(aiPlayer, enemies.isEmpty() ? null : enemies.get(0));
+        }
+
+        // Untuk simplicity, simulate response dari musuh pertama (strongest)
+        Player strongestEnemy = enemies.get(0);
+        List<AIMove> enemyMoves = generateMovesForState(state, strongestEnemy);
+
+        if (enemyMoves.isEmpty()) {
+            return state.evaluate(aiPlayer, strongestEnemy);
+        }
+
+        // Assume enemy pilih move terbaik (worst for us = minimum score)
+        double worstScore = Double.POSITIVE_INFINITY;
+
+        for (AIMove enemyMove : enemyMoves) {
+            BoardSimulator.BoardState afterEnemyMove = BoardSimulator.simulateMove(state, enemyMove, strongestEnemy);
+            double score = afterEnemyMove.evaluate(aiPlayer, strongestEnemy);
+            worstScore = Math.min(worstScore, score);
+
+            // Alpha-beta style pruning untuk efisiensi
+            if (worstScore < ALPHA_INITIAL + 100) {
+                break;
+            }
+        }
+
+        return worstScore;
     }
 
     private Player getFirstEnemy(GameManager gm, Player aiPlayer) {
