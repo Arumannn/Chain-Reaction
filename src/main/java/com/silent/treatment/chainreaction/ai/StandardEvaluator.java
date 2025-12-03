@@ -4,9 +4,6 @@ import com.silent.treatment.chainreaction.model.Board;
 import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
 
-/**
- * Evaluator dasar yang menilai berdasarkan Orb Count dan posisi strategis.
- */
 public class StandardEvaluator implements BoardEvaluator {
 
     @Override
@@ -17,7 +14,6 @@ public class StandardEvaluator implements BoardEvaluator {
             for (int j = 0; j < board.getHeight(); j++) {
                 Cell cell = board.getCell(i, j);
 
-                // PENTING: Skip null cells (untuk custom maps)
                 if (cell == null)
                     continue;
 
@@ -27,34 +23,27 @@ public class StandardEvaluator implements BoardEvaluator {
                 boolean isAI = cell.getOwner().equals(aiPlayer);
                 double cellValue = 0;
 
-                // 1. Nilai Orb Count (Setiap Orb bernilai 10)
                 cellValue += cell.getOrbs() * 10.0;
 
-                // 2. Proximity ke Critical Mass (Hampir meledak: bonus 25)
                 if (cell.getOrbs() == cell.getCriticalMass() - 1) {
                     cellValue += 25.0;
                 }
 
-                // 3. Nilai Posisi (Sudut > Pinggir)
                 if (cell.getCriticalMass() == 2)
-                    cellValue += 20.0; // Sudut
+                    cellValue += 20.0;
                 else if (cell.getCriticalMass() == 3)
-                    cellValue += 10.0; // Pinggir
+                    cellValue += 10.0;
 
-                // 3.5 Position Diversity: Tambah sedikit variasi berdasarkan koordinat
-                // Ini mencegah semua bot fokus ke area yang sama
-                cellValue += (i + j) * 0.1; // Variasi kecil berdasarkan posisi
+                cellValue += (i + j) * 0.1;
 
-                // 4. Danger Check (Cek ancaman dari Musuh yang siap meledak)
                 for (Cell neighbor : cell.getNeighbors()) {
                     if (neighbor.getOwner() != null && neighbor.getOwner().equals(enemyPlayer)) {
                         if (neighbor.getOrbs() == neighbor.getCriticalMass() - 1) {
-                            cellValue -= 50.0; // SANGAT BAHAYA
+                            cellValue -= 50.0;
                         }
                     }
                 }
 
-                // Akumulasi skor: Tambah jika milik AI, Kurangi jika milik Musuh
                 if (isAI)
                     score += cellValue;
                 else

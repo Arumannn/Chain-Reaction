@@ -28,49 +28,42 @@ public class MenuView extends StackPane {
     private final List<StackPane> menuButtons = new ArrayList<>();
     private int selectedIndex = 0;
 
-    // Container untuk konten utama menu
     private final VBox menuContainer;
 
-    // [PERBAIKAN] Constructor sudah benar sesuai snippet Anda
     public MenuView(Runnable onNewGame, Runnable onExit, Runnable onTutorial, Runnable onVsAI) {
         this.onNewGame = onNewGame;
         this.onExit = onExit;
         this.onTutorial = onTutorial;
         this.onVsAI = onVsAI;
 
-        // --- 1. Background Animasi ---
         Pane backgroundLayer = new Pane();
         backgroundLayer.setStyle("-fx-background-color: #121212;");
         createFloatingAtoms(backgroundLayer);
         this.getChildren().add(backgroundLayer);
 
-        // --- 2. Judul ---
         Text title = new Text("CHAIN\nREACTION");
         title.setFont(Font.font("Impact", 60));
         title.setFill(Color.WHITE);
         title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         title.setEffect(new DropShadow(20, Color.CYAN));
 
-        // --- 3. Opsi Menu ---
         VBox menuBox = new VBox(20);
         menuBox.setAlignment(Pos.CENTER);
 
-        // Tombol-tombol menu
         menuButtons.add(createButton("NEW GAME", Color.LIME, onNewGame));
         menuButtons.add(createButton("HOW TO PLAY", Color.YELLOW, onTutorial));
         menuButtons.add(createButton("EXIT", Color.RED, this::showExitConfirmation));
 
         menuBox.getChildren().addAll(menuButtons);
 
-        // --- Layout Utama Menu ---
         menuContainer = new VBox(40, title, menuBox);
         menuContainer.setAlignment(Pos.CENTER);
         this.getChildren().add(menuContainer);
 
-        // --- 4. Navigasi Keyboard ---
         this.setFocusTraversable(true);
         this.setOnKeyPressed(event -> {
-            if (this.getChildren().size() > 2) return; // Stop jika ada dialog
+            if (this.getChildren().size() > 2)
+                return;
 
             if (event.getCode() == KeyCode.UP) {
                 navigate(-1);
@@ -83,7 +76,6 @@ public class MenuView extends StackPane {
         updateSelectionVisuals();
     }
 
-    // --- Dialog Konfirmasi Exit ---
     private void showExitConfirmation() {
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
@@ -99,8 +91,7 @@ public class MenuView extends StackPane {
                         "-fx-border-color: red;" +
                         "-fx-border-width: 2;" +
                         "-fx-border-radius: 15;" +
-                        "-fx-background-radius: 15;"
-        );
+                        "-fx-background-radius: 15;");
         dialog.setEffect(new DropShadow(30, Color.BLACK));
 
         Label lblTitle = new Label("EXIT GAME?");
@@ -128,11 +119,12 @@ public class MenuView extends StackPane {
         this.getChildren().add(overlay);
     }
 
-    // --- Helper UI ---
     private void navigate(int direction) {
         selectedIndex += direction;
-        if (selectedIndex < 0) selectedIndex = menuButtons.size() - 1;
-        if (selectedIndex >= menuButtons.size()) selectedIndex = 0;
+        if (selectedIndex < 0)
+            selectedIndex = menuButtons.size() - 1;
+        if (selectedIndex >= menuButtons.size())
+            selectedIndex = 0;
         updateSelectionVisuals();
     }
 
@@ -140,7 +132,7 @@ public class MenuView extends StackPane {
         for (int i = 0; i < menuButtons.size(); i++) {
             StackPane btn = menuButtons.get(i);
             Rectangle border = (Rectangle) btn.getChildren().get(0);
-            Color baseColor = (Color) border.getStroke(); // Ambil warna dari stroke border
+            Color baseColor = (Color) border.getStroke();
 
             if (i == selectedIndex) {
                 border.setFill(baseColor.deriveColor(0, 1, 1, 0.3));
@@ -210,7 +202,7 @@ public class MenuView extends StackPane {
     private void createFloatingAtoms(Pane pane) {
         Random rand = new Random();
         List<Circle> atoms = new ArrayList<>();
-        Color[] colors = {Color.RED, Color.CYAN, Color.LIME, Color.YELLOW};
+        Color[] colors = { Color.RED, Color.CYAN, Color.LIME, Color.YELLOW };
         for (int i = 0; i < 15; i++) {
             Circle c = new Circle(rand.nextInt(5) + 2, colors[rand.nextInt(4)]);
             c.setOpacity(0.3);
@@ -223,7 +215,8 @@ public class MenuView extends StackPane {
             public void handle(long now) {
                 for (Circle c : atoms) {
                     c.setTranslateY(c.getTranslateY() - 0.5);
-                    if (c.getTranslateY() < 0) c.setTranslateY(700);
+                    if (c.getTranslateY() < 0)
+                        c.setTranslateY(700);
                 }
             }
         }.start();

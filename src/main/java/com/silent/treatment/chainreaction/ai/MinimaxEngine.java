@@ -6,7 +6,7 @@ import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
+
 import java.util.Random;
 
 public class MinimaxEngine {
@@ -15,22 +15,29 @@ public class MinimaxEngine {
     private final int maxDepth;
     private final Random random;
 
-    // Constants untuk magic numbers
-    private static final double SCORE_THRESHOLD = 0.1; // Threshold untuk tie detection
-    private static final double RANDOM_NOISE = 0.05; // Random noise untuk variasi
+    private static final double SCORE_THRESHOLD = 0.1;
+    private static final double RANDOM_NOISE = 0.05;
     private static final double EXPLOSION_BONUS = 50.0;
     private static final double CAPTURE_BONUS = 30.0;
+
+    private static final double ALPHA_INITIAL = Double.NEGATIVE_INFINITY;
+    private static final double BETA_INITIAL = Double.POSITIVE_INFINITY;
+
+    private final boolean useSimulation;
 
     public MinimaxEngine(BoardEvaluator evaluator, int depth) {
         this.evaluator = evaluator;
         this.maxDepth = depth;
         this.random = new Random();
+
+        this.useSimulation = (depth >= 2);
     }
 
     public MinimaxEngine(int depth) {
         this.evaluator = new StandardEvaluator();
         this.maxDepth = depth;
         this.random = new Random();
+        this.useSimulation = (depth >= 2);
     }
 
     public AIMove findBestMove(Board board, Player aiPlayer, Player enemyPlayer) {
@@ -39,15 +46,25 @@ public class MinimaxEngine {
         if (moves.isEmpty())
             return null;
 
-        // Collect all best moves (untuk handle tie)
+        if (useSimulation && maxDepth >= 2) {
+            return findBestMoveWithMinimax(board, aiPlayer, enemyPlayer, moves);
+        }
+
+        return findBestMoveGreedy(board, aiPlayer, enemyPlayer, moves);
+    }
+
+    private AIMove findBestMoveWithMinimax(Board board, Player aiPlayer, Player enemyPlayer, List<AIMove> moves) {
+        BoardSimulator.BoardState initialState = BoardSimulator.cloneBoard(board);
+
         List<AIMove> bestMoves = new ArrayList<>();
-        double bestScore = Double.NEGATIVE_INFINITY;
+        double bestScore = ALPHA_INITIAL;
 
         for (AIMove move : moves) {
-            // Evaluasi move dengan look-ahead based on depth
-            double score = evaluateMoveWithDepth(board, move, aiPlayer, enemyPlayer, maxDepth, true);
 
-            // Tambah random noise kecil untuk break deterministic pattern
+            BoardSimulator.BoardState newState = BoardSimulator.simulateMove(initialState, move, aiPlayer);
+
+            double score = minimax(newState, maxDepth - 1, ALPHA_INITIAL, BETA_INITIAL, false, aiPlayer, enemyPlayer);
+
             score += random.nextDouble() * RANDOM_NOISE;
 
             if (score > bestScore) {
@@ -55,40 +72,98 @@ public class MinimaxEngine {
                 bestMoves.clear();
                 bestMoves.add(move);
             } else if (Math.abs(score - bestScore) < SCORE_THRESHOLD) {
-                // Score hampir sama, collect sebagai kandidat
                 bestMoves.add(move);
             }
         }
 
-        // Pilih random dari best moves
         return bestMoves.isEmpty() ? null : bestMoves.get(random.nextInt(bestMoves.size()));
     }
 
-    /**
-     * Evaluasi move dengan recursive depth-limited search.
-     * Simplified minimax tanpa actual simulation (untuk performance).
-     */
-    private double evaluateMoveWithDepth(Board board, AIMove move, Player ai, Player enemy,
-            int depth, boolean isMaximizing) {
-        // Base case: depth 0 atau invalid
+    private double minimax(BoardSimulator.BoardState state, int depth, double alpha, double beta,
+            boolean isMaximizing, Player aiPlayer, Player enemyPlayer) {
+
         if (depth == 0) {
-            return evaluateMovePotential(board, move, ai, enemy);
+            return state.evaluate(aiPlayer, enemyPlayer);
         }
 
-        // Untuk depth > 0, evaluasi lebih dalam dengan bonus/penalty
-        double baseScore = evaluateMovePotential(board, move, ai, enemy);
+        Player currentPlayer = isMaximizing ? aiPlayer : enemyPlayer;
+        List<AIMove> moves = generateMovesForState(state, currentPlayer);
 
-        // Apply depth multiplier (deeper moves are less certain)
-        double depthFactor = 1.0 / (1.0 + depth * 0.2);
+        if (moves.isEmpty()) {
+            return state.evaluate(aiPlayer, enemyPlayer);
+        }
 
-        return baseScore * depthFactor;
+        if (isMaximizing) {
+
+            double maxEval = ALPHA_INITIAL;
+
+            for (AIMove move : moves) {
+                BoardSimulator.BoardState newState = BoardSimulator.simulateMove(state, move, currentPlayer);
+                double eval = minimax(newState, depth - 1, alpha, beta, false, aiPlayer, enemyPlayer);
+
+                maxEval = Math.max(maxEval, eval);
+                alpha = Math.max(alpha, eval);
+
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+            return maxEval;
+
+        } else {
+
+            double minEval = BETA_INITIAL;
+
+            for (AIMove move : moves) {
+                BoardSimulator.BoardState newState = BoardSimulator.simulateMove(state, move, currentPlayer);
+                double eval = minimax(newState, depth - 1, alpha, beta, true, aiPlayer, enemyPlayer);
+
+                minEval = Math.min(minEval, eval);
+                beta = Math.min(beta, eval);
+
+                if (beta <= alpha) {
+                    break;
+                }
+            }
+            return minEval;
+        }
     }
 
-    /**
-     * Overload untuk GameManager dan List<Cell> validMoves.
-     * Digunakan oleh AIMedium dan AIHard.
-     * Support multi-player dengan evaluasi semua musuh.
-     */
+    private List<AIMove> generateMovesForState(BoardSimulator.BoardState state, Player player) {
+        List<AIMove> moves = new ArrayList<>();
+
+        for (int x = 0; x < state.getWidth(); x++) {
+            for (int y = 0; y < state.getHeight(); y++) {
+                BoardSimulator.CellState cell = state.getCell(x, y);
+                if (cell != null && (cell.owner == null || cell.owner.equals(player))) {
+                    moves.add(new AIMove(x, y));
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    private AIMove findBestMoveGreedy(Board board, Player aiPlayer, Player enemyPlayer, List<AIMove> moves) {
+        List<AIMove> bestMoves = new ArrayList<>();
+        double bestScore = ALPHA_INITIAL;
+
+        for (AIMove move : moves) {
+            double score = evaluateMovePotential(board, move, aiPlayer, enemyPlayer);
+            score += random.nextDouble() * RANDOM_NOISE;
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMoves.clear();
+                bestMoves.add(move);
+            } else if (Math.abs(score - bestScore) < SCORE_THRESHOLD) {
+                bestMoves.add(move);
+            }
+        }
+
+        return bestMoves.isEmpty() ? null : bestMoves.get(random.nextInt(bestMoves.size()));
+    }
+
     public Cell findBestMove(GameManager gm, Player aiPlayer, List<Cell> validMoves) {
         if (validMoves == null || validMoves.isEmpty()) {
             return null;
@@ -97,14 +172,9 @@ public class MinimaxEngine {
         Board board = gm.getBoard();
         List<Player> enemies = getAllEnemies(gm, aiPlayer);
 
-        // Safety check: harus ada musuh
         if (enemies.isEmpty()) {
             return validMoves.isEmpty() ? null : validMoves.get(0);
         }
-
-        Player primaryEnemy = enemies.get(0); // Primary enemy untuk evaluasi
-
-        // Collect all best cells (untuk handle tie)
         List<Cell> bestCells = new ArrayList<>();
         double bestScore = Double.NEGATIVE_INFINITY;
 
@@ -112,13 +182,10 @@ public class MinimaxEngine {
             if (cell == null)
                 continue;
 
-            // Convert Cell to AIMove
             AIMove move = new AIMove(cell.getX(), cell.getY());
 
-            // Evaluate potential dengan multi-enemy consideration
             double score = evaluateMoveWithMultipleEnemies(board, move, aiPlayer, enemies);
 
-            // Tambah random noise kecil untuk break deterministic pattern
             score += random.nextDouble() * RANDOM_NOISE;
 
             if (score > bestScore) {
@@ -126,18 +193,14 @@ public class MinimaxEngine {
                 bestCells.clear();
                 bestCells.add(cell);
             } else if (Math.abs(score - bestScore) < SCORE_THRESHOLD) {
-                // Score hampir sama, collect sebagai kandidat
+
                 bestCells.add(cell);
             }
         }
 
-        // Pilih random dari best cells
         return bestCells.isEmpty() ? null : bestCells.get(random.nextInt(bestCells.size()));
     }
 
-    /**
-     * Get first alive enemy (untuk backward compatibility).
-     */
     private Player getFirstEnemy(GameManager gm, Player aiPlayer) {
         for (Player p : gm.getPlayers()) {
             if (!p.equals(aiPlayer) && p.isAlive()) {
@@ -147,9 +210,6 @@ public class MinimaxEngine {
         return null;
     }
 
-    /**
-     * Get all alive enemies (untuk multi-player support).
-     */
     private List<Player> getAllEnemies(GameManager gm, Player aiPlayer) {
         List<Player> enemies = new ArrayList<>();
         for (Player p : gm.getPlayers()) {
@@ -160,36 +220,29 @@ public class MinimaxEngine {
         return enemies;
     }
 
-    /**
-     * Evaluasi move dengan mempertimbangkan multiple enemies.
-     */
     private double evaluateMoveWithMultipleEnemies(Board board, AIMove move, Player ai, List<Player> enemies) {
         Cell cell = board.getCell(move.x, move.y);
 
         if (cell == null)
             return Double.NEGATIVE_INFINITY;
 
-        // Base score dari evaluator (dengan primary enemy)
         double score = evaluator.evaluate(board, ai, enemies.get(0));
 
-        // Bonus jika cell hampir critical
         if (cell.getOrbs() == cell.getCriticalMass() - 1) {
             score += EXPLOSION_BONUS;
 
-            // Check capture bonus untuk SEMUA musuh
             for (Cell neighbor : cell.getNeighbors()) {
                 if (neighbor.getOwner() != null) {
                     for (Player enemy : enemies) {
                         if (neighbor.getOwner().equals(enemy)) {
                             score += CAPTURE_BONUS;
-                            break; // Hanya hitung sekali per neighbor
+                            break;
                         }
                     }
                 }
             }
         }
 
-        // Penalty jika ada multiple enemies yang kuat di sekitar
         int enemyThreats = 0;
         for (Cell neighbor : cell.getNeighbors()) {
             if (neighbor.getOwner() != null) {
@@ -201,29 +254,26 @@ public class MinimaxEngine {
                 }
             }
         }
-        score -= enemyThreats * 20.0; // Penalty untuk ancaman
+        score -= enemyThreats * 20.0;
 
         return score;
     }
 
     private double evaluateMovePotential(Board board, AIMove move, Player ai, Player enemy) {
-        // 1. Dapatkan Cell target
+
         Cell cell = board.getCell(move.x, move.y);
 
-        // Safety check: Skip null cells
         if (cell == null)
             return Double.NEGATIVE_INFINITY;
 
-        // 2. Nilai posisi papan saat ini (Dasar)
         double score = evaluator.evaluate(board, ai, enemy);
 
         if (cell.getOrbs() == cell.getCriticalMass() - 1) {
-            score += EXPLOSION_BONUS; // Bonus Ledakan
+            score += EXPLOSION_BONUS;
 
-            // Cek apakah ledakan ini berpotensi mengenai musuh (Capture bonus)
             for (Cell n : cell.getNeighbors()) {
                 if (n.getOwner() != null && n.getOwner().equals(enemy)) {
-                    score += CAPTURE_BONUS; // Capture bonus
+                    score += CAPTURE_BONUS;
                 }
             }
         }

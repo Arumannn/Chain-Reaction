@@ -14,7 +14,7 @@ public class AIHard extends AIBase {
     private final Random random;
 
     public AIHard() {
-        this.minimaxEngine = new MinimaxEngine(3); // Depth 3 untuk hard
+        this.minimaxEngine = new MinimaxEngine(3); 
         this.random = new Random();
     }
 
@@ -25,26 +25,18 @@ public class AIHard extends AIBase {
 
         if (validMoves.isEmpty()) {
             return null;
-        }
-
-        // Gunakan Minimax untuk mencari best move
+        }        
         Cell bestMove = minimaxEngine.findBestMove(gm, aiPlayer, validMoves);
 
         if (bestMove != null) {
             return bestMove;
         }
-
-        // Fallback jika minimax gagal
+        
         return fallbackMove(validMoves, aiPlayer);
     }
-
-    /**
-     * Fallback move jika minimax gagal.
-     * Pilih cell yang paling strategis (dekat critical mass atau blocking).
-     */
-    private Cell fallbackMove(List<Cell> validMoves, Player aiPlayer) {
+       private Cell fallbackMove(List<Cell> validMoves, Player aiPlayer) {
         if (validMoves == null || validMoves.isEmpty()) {
-            return null; // Safety: no valid moves
+            return null; 
         }
 
         List<Cell> bestCells = new ArrayList<>();
@@ -56,19 +48,14 @@ public class AIHard extends AIBase {
 
             int score = 0;
             int orbs = cell.getOrbs();
-            int criticalMass = cell.getCriticalMass();
-
-            // Prioritaskan cell yang hampir critical
+            int criticalMass = cell.getCriticalMass();           
             if (cell.getOwner() != null && cell.getOwner().equals(aiPlayer)) {
-                score += (orbs * 10);
-
-                // Extra bonus jika hampir critical
+                score += (orbs * 10);             
                 if (orbs == criticalMass - 1) {
                     score += 50;
                 }
-            } else if (cell.getOwner() == null) {
-                // Empty cell, prioritaskan corner dan edge
-                score += (4 - criticalMass) * 5; // Corner > Edge > Center
+            } else if (cell.getOwner() == null) {              
+                score += (4 - criticalMass) * 5; 
             }
 
             if (score > maxScore) {
@@ -78,14 +65,11 @@ public class AIHard extends AIBase {
             } else if (score == maxScore) {
                 bestCells.add(cell);
             }
-        }
-
-        // Pilih random dari best cells
+        }       
         if (!bestCells.isEmpty()) {
             return bestCells.get(random.nextInt(bestCells.size()));
         }
-
-        // Jika tidak ada, pilih random dari validMoves (filter null)
+       
         List<Cell> nonNullMoves = new ArrayList<>();
         for (Cell c : validMoves) {
             if (c != null)
@@ -95,7 +79,6 @@ public class AIHard extends AIBase {
         if (!nonNullMoves.isEmpty()) {
             return nonNullMoves.get(random.nextInt(nonNullMoves.size()));
         }
-
-        return null; // No valid move at all
+       return null; 
     }
 }

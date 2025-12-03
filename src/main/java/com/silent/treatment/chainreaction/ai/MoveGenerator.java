@@ -8,10 +8,6 @@ import java.util.List;
 
 public class MoveGenerator {
 
-    /**
-     * Menghasilkan semua langkah legal yang mungkin dilakukan oleh pemain.
-     * Langkah legal adalah sel yang kosong ATAU sudah dimiliki oleh pemain.
-     */
     public static List<AIMove> getLegalMoves(Board board, Player player) {
         List<AIMove> moves = new ArrayList<>();
 
@@ -19,13 +15,11 @@ public class MoveGenerator {
             for (int j = 0; j < board.getHeight(); j++) {
                 Cell cell = board.getCell(i, j);
 
-                // PENTING: Skip null cells (untuk custom maps seperti Diamond, Plus, dll)
                 if (cell == null)
                     continue;
 
-                // Syarat: Cell kosong ATAU milik sendiri
                 if (cell.getOwner() == null || cell.getOwner().equals(player)) {
-                    // Skor awal diatur 0, nanti akan diisi oleh MinimaxEngine
+
                     moves.add(new AIMove(i, j, 0));
                 }
             }

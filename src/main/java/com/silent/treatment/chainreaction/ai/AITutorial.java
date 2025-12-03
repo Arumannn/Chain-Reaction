@@ -18,8 +18,6 @@ public class AITutorial extends AIBase {
         if (legalMoves.isEmpty())
             return null;
 
-        // Tutorial AI: Pilih random move (sangat lemah)
-        // Tapi hindari move yang terlalu bagus (explosion)
         List<AIMove> safeMovesWeakMoves = new ArrayList<>();
         List<AIMove> allMoves = new ArrayList<>();
 
@@ -30,13 +28,11 @@ public class AITutorial extends AIBase {
 
             allMoves.add(move);
 
-            // Avoid explosion moves (too good for tutorial AI)
             if (cell.getOrbs() < cell.getCriticalMass() - 1) {
                 safeMovesWeakMoves.add(move);
             }
         }
 
-        // Prioritas: weak moves > all moves > random
         List<AIMove> chooseFrom = safeMovesWeakMoves.isEmpty() ? allMoves : safeMovesWeakMoves;
 
         if (chooseFrom.isEmpty()) {

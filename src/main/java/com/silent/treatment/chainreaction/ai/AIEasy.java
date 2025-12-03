@@ -8,24 +8,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * MODE 2: Easy AI. Menggunakan Minimax Depth 1 dengan evaluasi standar.
- */
 public class AIEasy {
 
     private final MinimaxEngine engine;
     private final Random random;
 
-    public AIEasy() {
-        // Depth 1 (Hanya evaluasi posisi saat ini)
+    public AIEasy() {        
         this.engine = new MinimaxEngine(new StandardEvaluator(), 1);
         this.random = new Random();
     }
 
     public Cell chooseMove(GameManager gm) {
         Player ai = gm.getCurrentPlayer();
-
-        // Fix: Pilih musuh yang masih hidup (untuk multi-player)
+        
         Player enemy = null;
         for (Player p : gm.getPlayers()) {
             if (!p.equals(ai) && p.isAlive()) {
@@ -33,13 +28,11 @@ public class AIEasy {
                 break;
             }
         }
-
-        // Safety: Jika tidak ada musuh (sangat jarang), return valid move apa saja
+       
         if (enemy == null) {
             if (gm.getPlayers().size() > 1) {
                 enemy = gm.getPlayers().get(0).equals(ai) ? gm.getPlayers().get(1) : gm.getPlayers().get(0);
-            } else {
-                // Only 1 player (shouldn't happen), return any valid move
+            } else {               
                 return findAnyValidCell(gm, ai);
             }
         }
@@ -51,19 +44,12 @@ public class AIEasy {
             System.err.println("AI Error: " + e.getMessage());
         }
 
-        if (bestMove == null) {
-            // Fallback: Cari sel kosong atau milik sendiri
+        if (bestMove == null) {            
             return findAnyValidCell(gm, ai);
         }
 
-        return gm.getBoard().getCell(bestMove.x, bestMove.y);
-    }
-
-    /**
-     * Helper untuk fallback: cari valid cell (kosong atau milik sendiri).
-     * Prioritas: empty cell > own cell dengan most orbs.
-     */
-    private Cell findAnyValidCell(GameManager gm, Player ai) {
+        return gm.getBoard().getCell(bestMove.x, bestMove.y);}
+        private Cell findAnyValidCell(GameManager gm, Player ai) {
         List<Cell> emptyCells = new ArrayList<>();
         List<Cell> ownCells = new ArrayList<>();
 
@@ -71,7 +57,7 @@ public class AIEasy {
             for (int y = 0; y < gm.getBoard().getHeight(); y++) {
                 Cell c = gm.getBoard().getCell(x, y);
                 if (c == null)
-                    continue; // Skip null cells di custom maps
+                    continue; 
 
                 if (c.getOwner() == null) {
                     emptyCells.add(c);
@@ -81,12 +67,12 @@ public class AIEasy {
             }
         }
 
-        // Prioritas 1: Empty cell
+        
         if (!emptyCells.isEmpty()) {
             return emptyCells.get(random.nextInt(emptyCells.size()));
         }
 
-        // Prioritas 2: Own cell dengan most orbs
+        
         if (!ownCells.isEmpty()) {
             Cell bestOwn = ownCells.get(0);
             for (Cell c : ownCells) {
@@ -97,7 +83,7 @@ public class AIEasy {
             return bestOwn;
         }
 
-        // No valid move (shouldn't happen)
+        
         return null;
     }
 }
