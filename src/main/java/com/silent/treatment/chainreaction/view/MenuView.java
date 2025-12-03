@@ -2,6 +2,7 @@ package com.silent.treatment.chainreaction.view;
 
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
@@ -13,6 +14,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +56,7 @@ public class MenuView extends StackPane {
 
         menuButtons.add(createButton("NEW GAME", Color.LIME, onNewGame));
         menuButtons.add(createButton("HOW TO PLAY", Color.YELLOW, onTutorial));
+        menuButtons.add(createButton("SETTING", Color.MAGENTA, this::openSettings));
         menuButtons.add(createButton("EXIT", Color.RED, this::showExitConfirmation));
 
         menuBox.getChildren().addAll(menuButtons);
@@ -76,6 +79,20 @@ public class MenuView extends StackPane {
             }
         });
         updateSelectionVisuals();
+    }
+
+    private void openSettings() {
+        // Dapatkan stage dari scene saat ini
+        if (getScene() != null && getScene().getWindow() instanceof Stage) {
+            Stage stage = (Stage) getScene().getWindow();
+            
+            // Buat SettingsView dengan callback Back yang mengembalikan scene ke MenuView ini
+            SettingsView settingsView = new SettingsView(() -> {
+                stage.getScene().setRoot(this); // Kembali ke menu ini
+            });
+            
+            stage.getScene().setRoot(settingsView);
+        }
     }
 
     private void showExitConfirmation() {
