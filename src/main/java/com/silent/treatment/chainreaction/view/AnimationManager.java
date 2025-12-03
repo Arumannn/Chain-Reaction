@@ -40,12 +40,8 @@ public class AnimationManager {
                 new javafx.animation.KeyFrame(javafx.util.Duration.millis(50), e -> executeBatchCompletedTasks()));
         this.batchExecutionTimer.setCycleCount(1);
 
-        // [FIX] DELETED: Removed the code that overwrote the GameController's callback.
-        // The GameController needs to own this callback to trigger nextTurn/elimination.
-        
-        explosionQueue.setOnTaskEnqueued(() -> {
-            processAllPendingAnimations();
-        });
+        // Listener otomatis DIHAPUS agar Turn-Based aman.
+        // Kita menggunakan pemicu manual di executeBatchCompletedTasks untuk Chain Reaction.
     }
 
     private void processAnimationForTask(ExplosionQueue.ExplosionTask task) {
@@ -97,12 +93,13 @@ public class AnimationManager {
                 synchronized (pendingCompletedTasks) {
                     pendingCompletedTasks.add(completedTask);
                 }
+                // Reset timer untuk mengumpulkan task yang selesai hampir bersamaan
                 batchExecutionTimer.stop();
                 batchExecutionTimer.play();
+            } else {
+                // Fallback jika task hilang (jarang terjadi)
+                checkAndNotifyCompletion();
             }
-
-            processAllPendingAnimations();
-            checkAndNotifyCompletion();
         });
 
         Timeline pulse = ExplosionAnimation.createPreExplosionPulse(cellView);
@@ -119,6 +116,7 @@ public class AnimationManager {
         ExplosionQueue.ExplosionTask task = explosionQueue.peekNext();
         while (task != null) {
             Cell cell = task.getCell();
+            // Hanya proses jika cell tersebut tidak sedang dianimasikan
             if (!activeAnimations.containsKey(cell)) {
                 readyTasks.add(task);
                 explosionQueue.removeTask(task);
@@ -154,8 +152,9 @@ public class AnimationManager {
             for (ExplosionQueue.ExplosionTask readyTask : readyTasks) {
                 processAnimationForTask(readyTask);
             }
-
-            checkAndNotifyCompletion();
+            
+            // Note: Kita tidak panggil checkAndNotifyCompletion di sini
+            // karena animasi baru saja dimulai (activeAnimations tidak kosong)
         });
     }
 
@@ -164,6 +163,7 @@ public class AnimationManager {
 
         synchronized (pendingCompletedTasks) {
             if (pendingCompletedTasks.isEmpty()) {
+                checkAndNotifyCompletion();
                 return;
             }
             tasksToExecute = new ArrayList<>(pendingCompletedTasks);
@@ -171,18 +171,22 @@ public class AnimationManager {
         }
 
         if (tasksToExecute.isEmpty()) {
+            checkAndNotifyCompletion();
             return;
         }
 
+        // 1. Kurangi Orb di cell pusat
         for (ExplosionQueue.ExplosionTask task : tasksToExecute) {
             int remainingOrbs = task.getCell().getOrbs() - task.getCell().getCriticalMass();
             task.getCell().setOrbs(remainingOrbs);
 
+            // Jika sisa orb masih overload (kasus langka orb sangat banyak), queue lagi
             if (remainingOrbs >= task.getCell().getCriticalMass()) {
                 explosionQueue.enqueueExplosion(task.getCell(), task.getBoard(), task.getPlayer());
             }
         }
 
+        // 2. Kumpulkan distribusi orb ke tetangga
         Map<Cell, Map<Player, Integer>> allDistributions = new HashMap<>();
 
         for (ExplosionQueue.ExplosionTask task : tasksToExecute) {
@@ -202,6 +206,8 @@ public class AnimationManager {
             }
         }
 
+        // 3. Eksekusi penambahan orb ke tetangga
+        // Disinilah "addOrb" akan dipanggil, yang mungkin memicu enqueueExplosion baru!
         for (Map.Entry<Cell, Map<Player, Integer>> entry : allDistributions.entrySet()) {
             Cell target = entry.getKey();
             Map<Player, Integer> playerOrbs = entry.getValue();
@@ -227,12 +233,31 @@ public class AnimationManager {
                 }
             }
         }
+
+        // [FIX UTAMA] RE-TRIGGER ANIMASI
+        // Cek apakah batch barusan menyebabkan ledakan baru di Queue?
+        if (explosionQueue.peekNext() != null) {
+            // Jika ADA ledakan baru, langsung proses animasinya!
+            // Inilah yang membuat rantai ledakan berlanjut.
+            processAllPendingAnimations();
+        } else {
+            // Jika TIDAK ADA ledakan baru, baru kita cek apakah game boleh lanjut
+            checkAndNotifyCompletion();
+        }
     }
 
     private void checkAndNotifyCompletion() {
-        if (activeAnimations.isEmpty()) {
+        // Hanya notify selesai jika:
+        // 1. Tidak ada animasi visual yang sedang jalan
+        // 2. Tidak ada pending task yang menunggu dieksekusi
+        // 3. Tidak ada task baru di queue
+        boolean isReallyEmpty = activeAnimations.isEmpty() 
+                             && pendingCompletedTasks.isEmpty()
+                             && explosionQueue.peekNext() == null;
+
+        if (isReallyEmpty) {
             ExplosionAnimation.clearCoordinateCache();
-            // Notifies the listener (GameController) that queue is empty
+            // Beritahu GameController bahwa SEMUA rangkaian ledakan sudah selesai
             explosionQueue.notifyQueueEmpty();
         }
     }

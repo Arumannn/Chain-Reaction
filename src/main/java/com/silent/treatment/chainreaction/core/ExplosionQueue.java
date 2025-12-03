@@ -10,24 +10,13 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Queue system untuk mengelola sequential explosions dalam Chain Reaction.
- * Memastikan ledakan terjadi satu per satu dengan delay untuk animasi.
- * 
- * Thread-safe dengan ReentrantLock untuk mencegah race conditions.
- */
 public class ExplosionQueue {
     private static ExplosionQueue instance;
 
     private Queue<ExplosionTask> explosionQueue;
     private boolean isProcessing;
     private ReentrantLock lock;
-
-    // Callback untuk notifikasi ketika queue selesai
     private Runnable onQueueEmpty;
-
-    // Callback untuk notifikasi ketika task baru di-enqueue
-    // Digunakan untuk langsung trigger animasi processing
     private Runnable onTaskEnqueued;
 
     private ExplosionQueue() {
@@ -43,19 +32,17 @@ public class ExplosionQueue {
         return instance;
     }
 
-    /**
-     * Menambahkan task ledakan ke queue.
-     * Task akan diproses secara parallel jika multiple explosions terjadi
-     * bersamaan.
-     */
     public void enqueueExplosion(Cell cell, Board board, Player player) {
         lock.lock();
         try {
+            System.out.println("[QUEUE] + Enqueue Explosion di (" + cell.getX() + "," + cell.getY() + ")");
             ExplosionTask task = new ExplosionTask(cell, board, player);
             explosionQueue.offer(task);
+            
+            // Set flag processing menjadi TRUE saat ada item masuk
+            this.isProcessing = true;
+            System.out.println("[QUEUE] Status isProcessing SET TO TRUE (Queue tidak kosong)");
 
-            // Trigger callback untuk langsung memproses animasi
-            // Ini memungkinkan multiple explosions berjalan bersamaan
             if (onTaskEnqueued != null) {
                 onTaskEnqueued.run();
             }
@@ -64,10 +51,6 @@ public class ExplosionQueue {
         }
     }
 
-    /**
-     * Mengambil task berikutnya dari queue untuk dianimasikan.
-     * Returns null jika queue kosong.
-     */
     public ExplosionTask peekNext() {
         lock.lock();
         try {
@@ -77,153 +60,48 @@ public class ExplosionQueue {
         }
     }
 
-    /**
-     * Memproses task berikutnya dalam queue.
-     * Dipanggil setelah animasi selesai atau saat queue baru diisi.
-     */
-    public void processNext() {
+    // Ini dipanggil saat animasi selesai atau manual check
+    public void notifyQueueEmpty() {
         lock.lock();
         try {
+            // Hanya set false jika queue benar-benar kosong
             if (explosionQueue.isEmpty()) {
+                System.out.println("[QUEUE] Queue Kosong & NotifyQueueEmpty dipanggil.");
+                System.out.println("[QUEUE] Status isProcessing SET TO FALSE (Input Dibuka Kembali)");
                 isProcessing = false;
-
-                // Notifikasi bahwa semua explosions selesai
+                
                 if (onQueueEmpty != null) {
                     onQueueEmpty.run();
                 }
-                return;
+            } else {
+                System.out.println("[QUEUE] NotifyQueueEmpty dipanggil TAPI queue masih ada isi (" + explosionQueue.size() + "). isProcessing tetap TRUE.");
             }
-
-            isProcessing = true;
-            // Task akan diambil dan dieksekusi oleh view layer setelah animasi
-            // Kita hanya set flag bahwa ada task yang perlu diproses
-
         } finally {
             lock.unlock();
         }
     }
-
-    /**
-     * Menandai bahwa animasi untuk task saat ini selesai.
-     * Eksekusi task dan lanjut ke berikutnya.
-     * DEPRECATED: Gunakan executeBatch() untuk batch processing.
-     */
-    @Deprecated
-    public void onAnimationComplete() {
+    
+    // Method baru untuk memaksa status processing (digunakan oleh AnimationManager jika perlu)
+    public void setProcessing(boolean processing) {
         lock.lock();
         try {
-            ExplosionTask task = explosionQueue.poll();
-            if (task != null) {
-                // Execute explosion logic setelah animasi selesai
-                task.execute();
-            }
-
-            // Proses task berikutnya jika ada
-            processNext();
+            System.out.println("[QUEUE] Force Set isProcessing: " + processing);
+            this.isProcessing = processing;
         } finally {
             lock.unlock();
         }
     }
 
-    /**
-     * Mengeksekusi semua pending tasks dengan batch processing.
-     * Mengumpulkan semua distribusi orb terlebih dahulu, baru execute sekaligus.
-     * Ini mencegah bug ketika multiple explosions menargetkan cell yang sama.
-     * 
-     * @param tasks List tasks yang akan dieksekusi
-     */
-    public void executeBatch(List<ExplosionTask> tasks) {
-        if (tasks == null || tasks.isEmpty()) {
-            return;
-        }
-
-        // Step 1: Eksekusi semua explosions (kurangi orb di cell yang meledak)
-        for (ExplosionTask task : tasks) {
-            int remainingOrbs = task.getCell().getOrbs() - task.getCell().getCriticalMass();
-            task.getCell().setOrbs(remainingOrbs);
-
-            // [FIX] Cek apakah cell masih overload (bisa meledak lagi)
-            // Ini terjadi jika cell menerima banyak orb sekaligus dari ledakan sebelumnya
-            if (remainingOrbs >= task.getCell().getCriticalMass()) {
-                // Re-enqueue explosion untuk cell yang sama
-                enqueueExplosion(task.getCell(), task.getBoard(), task.getPlayer());
-            }
-        }
-
-        // Step 2: Kumpulkan semua distribusi orb ke setiap target cell
-        // Map: Cell target -> (Map: Player -> jumlah orb)
-        Map<Cell, Map<Player, Integer>> allDistributions = new HashMap<>();
-
-        for (ExplosionTask task : tasks) {
-            Map<Cell, Integer> distributions = task.collectDistributions();
-
-            for (Map.Entry<Cell, Integer> entry : distributions.entrySet()) {
-                Cell target = entry.getKey();
-                int orbCount = entry.getValue();
-
-                // Kumpulkan berdasarkan player (jika cell kosong atau milik player yang sama)
-                if (!allDistributions.containsKey(target)) {
-                    allDistributions.put(target, new HashMap<>());
-                }
-
-                Map<Player, Integer> playerOrbs = allDistributions.get(target);
-                Player taskPlayer = task.getPlayer();
-
-                // Jika cell kosong atau milik player yang sama, tambahkan ke player tersebut
-                // Jika cell milik player berbeda, tetap tambahkan (akan di-overwrite owner)
-                playerOrbs.put(taskPlayer, playerOrbs.getOrDefault(taskPlayer, 0) + orbCount);
-            }
-        }
-
-        // Step 3: Execute semua distribusi sekaligus
-        // Untuk setiap target cell, tambahkan semua orb sekaligus
-        for (Map.Entry<Cell, Map<Player, Integer>> entry : allDistributions.entrySet()) {
-            Cell target = entry.getKey();
-            Map<Player, Integer> playerOrbs = entry.getValue();
-
-            // Jika hanya satu player, gunakan addOrbs untuk batch
-            if (playerOrbs.size() == 1) {
-                Map.Entry<Player, Integer> singleEntry = playerOrbs.entrySet().iterator().next();
-                target.addOrbs(singleEntry.getValue(), singleEntry.getKey(), tasks.get(0).getBoard());
-            } else {
-                // Jika multiple players (tidak mungkin dalam game normal, tapi handle untuk
-                // safety)
-                // Gunakan player dengan orb terbanyak, atau player pertama
-                Player dominantPlayer = null;
-                int maxOrbs = 0;
-                int totalOrbs = 0;
-
-                for (Map.Entry<Player, Integer> playerEntry : playerOrbs.entrySet()) {
-                    totalOrbs += playerEntry.getValue();
-                    if (playerEntry.getValue() > maxOrbs) {
-                        maxOrbs = playerEntry.getValue();
-                        dominantPlayer = playerEntry.getKey();
-                    }
-                }
-
-                // Tambahkan semua orb dengan player dominan
-                if (dominantPlayer != null) {
-                    target.addOrbs(totalOrbs, dominantPlayer, tasks.get(0).getBoard());
-                }
-            }
-        }
-    }
-
-    /**
-     * Mengecek apakah queue sedang memproses explosions.
-     */
     public boolean isProcessing() {
         lock.lock();
         try {
+            // Processing true jika flag true ATAU queue masih ada isi
             return isProcessing || !explosionQueue.isEmpty();
         } finally {
             lock.unlock();
         }
     }
 
-    /**
-     * Membersihkan queue (untuk reset game).
-     */
     public void clear() {
         lock.lock();
         try {
@@ -234,25 +112,9 @@ public class ExplosionQueue {
         }
     }
 
-    /**
-     * Set callback ketika queue kosong (semua explosions selesai).
-     */
-    public void setOnQueueEmpty(Runnable callback) {
-        this.onQueueEmpty = callback;
-    }
+    public void setOnQueueEmpty(Runnable callback) { this.onQueueEmpty = callback; }
+    public void setOnTaskEnqueued(Runnable callback) { this.onTaskEnqueued = callback; }
 
-    /**
-     * Set callback ketika task baru di-enqueue.
-     * Digunakan untuk langsung trigger animasi processing.
-     */
-    public void setOnTaskEnqueued(Runnable callback) {
-        this.onTaskEnqueued = callback;
-    }
-
-    /**
-     * Menghapus task tertentu dari queue.
-     * Digunakan ketika task langsung diproses tanpa menunggu.
-     */
     public void removeTask(ExplosionTask task) {
         lock.lock();
         try {
@@ -262,26 +124,6 @@ public class ExplosionQueue {
         }
     }
 
-    /**
-     * Notifikasi bahwa queue kosong (untuk trigger callback).
-     */
-    public void notifyQueueEmpty() {
-        lock.lock();
-        try {
-            if (explosionQueue.isEmpty() && !isProcessing) {
-                if (onQueueEmpty != null) {
-                    onQueueEmpty.run();
-                }
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Inner class untuk menyimpan data explosion task.
-     * Public untuk akses dari view layer.
-     */
     public static class ExplosionTask {
         private final Cell cell;
         private final Board board;
@@ -293,45 +135,20 @@ public class ExplosionQueue {
             this.player = player;
         }
 
-        public Cell getCell() {
-            return cell;
-        }
+        public Cell getCell() { return cell; }
+        public Board getBoard() { return board; }
+        public Player getPlayer() { return player; }
 
-        public Board getBoard() {
-            return board;
-        }
-
-        public Player getPlayer() {
-            return player;
-        }
-
-        public void execute() {
-            // Eksekusi logika explosion
-            int remainingOrbs = cell.getOrbs() - cell.getCriticalMass();
-            cell.setOrbs(remainingOrbs);
-
-            // Distribusi ke tetangga (akan di-queue juga jika perlu)
-            for (Cell neighbor : cell.getNeighbors()) {
-                neighbor.addOrb(player, board);
-            }
-        }
-
-        /**
-         * Mengumpulkan semua orb yang akan didistribusikan tanpa langsung
-         * menambahkannya.
-         * Digunakan untuk batch processing ketika multiple explosions terjadi.
-         * 
-         * @return Map yang berisi cell target dan jumlah orb yang akan ditambahkan
-         */
         public Map<Cell, Integer> collectDistributions() {
             Map<Cell, Integer> distributions = new HashMap<>();
-
-            // Kumpulkan distribusi ke setiap neighbor
             for (Cell neighbor : cell.getNeighbors()) {
                 distributions.put(neighbor, distributions.getOrDefault(neighbor, 0) + 1);
             }
-
             return distributions;
+        }
+        
+        public void execute() {
+             // Logic manual jika tidak pakai batch (tapi kita pakai batch di AnimationManager)
         }
     }
 }
