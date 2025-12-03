@@ -58,7 +58,6 @@ public class MenuView extends StackPane {
         // Tombol-tombol menu
         menuButtons.add(createButton("NEW GAME", Color.LIME, onNewGame));
         menuButtons.add(createButton("HOW TO PLAY", Color.YELLOW, onTutorial));
-        menuButtons.add(createButton("LAWAN KOMPUTER", Color.CYAN, onVsAI));
         menuButtons.add(createButton("EXIT", Color.RED, this::showExitConfirmation));
 
         menuBox.getChildren().addAll(menuButtons);

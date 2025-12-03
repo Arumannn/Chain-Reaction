@@ -17,7 +17,12 @@ public class StandardEvaluator implements BoardEvaluator {
             for (int j = 0; j < board.getHeight(); j++) {
                 Cell cell = board.getCell(i, j);
 
-                if (cell.getOwner() == null) continue;
+                // PENTING: Skip null cells (untuk custom maps)
+                if (cell == null)
+                    continue;
+
+                if (cell.getOwner() == null)
+                    continue;
 
                 boolean isAI = cell.getOwner().equals(aiPlayer);
                 double cellValue = 0;
@@ -31,8 +36,14 @@ public class StandardEvaluator implements BoardEvaluator {
                 }
 
                 // 3. Nilai Posisi (Sudut > Pinggir)
-                if (cell.getCriticalMass() == 2) cellValue += 20.0; // Sudut
-                else if (cell.getCriticalMass() == 3) cellValue += 10.0; // Pinggir
+                if (cell.getCriticalMass() == 2)
+                    cellValue += 20.0; // Sudut
+                else if (cell.getCriticalMass() == 3)
+                    cellValue += 10.0; // Pinggir
+
+                // 3.5 Position Diversity: Tambah sedikit variasi berdasarkan koordinat
+                // Ini mencegah semua bot fokus ke area yang sama
+                cellValue += (i + j) * 0.1; // Variasi kecil berdasarkan posisi
 
                 // 4. Danger Check (Cek ancaman dari Musuh yang siap meledak)
                 for (Cell neighbor : cell.getNeighbors()) {
@@ -44,8 +55,10 @@ public class StandardEvaluator implements BoardEvaluator {
                 }
 
                 // Akumulasi skor: Tambah jika milik AI, Kurangi jika milik Musuh
-                if (isAI) score += cellValue;
-                else score -= cellValue;
+                if (isAI)
+                    score += cellValue;
+                else
+                    score -= cellValue;
             }
         }
         return score;

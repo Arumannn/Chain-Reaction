@@ -12,6 +12,13 @@ public class AIMove implements Comparable<AIMove> {
     }
 
     /**
+     * Constructor tanpa score (default 0).
+     */
+    public AIMove(int x, int y) {
+        this(x, y, 0.0);
+    }
+
+    /**
      * Mengurutkan langkah berdasarkan skor (Skor tertinggi didahulukan).
      */
     @Override

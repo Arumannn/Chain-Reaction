@@ -258,6 +258,7 @@ package com.silent.treatment.chainreaction.view;
 
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.model.MapType;
+import com.silent.treatment.chainreaction.view.DifficultySelectionView.Difficulty;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -283,8 +284,15 @@ public class SetupView extends StackPane {
     public static class GameConfig {
         public MapType mapType;
         public List<Player> players;
-        // public GameConfig(int w, int h, List<Player> p) { this.width = w; this.height = h; this.players = p; }
-        public GameConfig(MapType map, List<Player> p) { this.mapType = map; this.players = p; }
+        public List<Boolean> isBot; // Track player mana yang bot
+        public Difficulty botDifficulty; // Difficulty untuk semua bot
+
+        public GameConfig(MapType map, List<Player> p, List<Boolean> bots, Difficulty diff) {
+            this.mapType = map;
+            this.players = p;
+            this.isBot = bots;
+            this.botDifficulty = diff;
+        }
     }
 
     private final Consumer<GameConfig> onStartGame;
@@ -294,6 +302,8 @@ public class SetupView extends StackPane {
     // UI Components
     // private ComboBox<String> boardSizeCombo;
     private Spinner<Integer> playerCountSpinner;
+    private Spinner<Integer> botCountSpinner;
+    private ComboBox<Difficulty> botDifficultyCombo;
     private VBox playersContainer;
 
     public SetupView(Consumer<GameConfig> onStartGame, Runnable onBack) {
@@ -318,8 +328,7 @@ public class SetupView extends StackPane {
                         "-fx-background-radius: 20;" +
                         "-fx-border-color: rgba(255, 255, 255, 0.2);" +
                         "-fx-border-radius: 20;" +
-                        "-fx-border-width: 1;"
-        );
+                        "-fx-border-width: 1;");
         // Efek bayangan panel
         mainPanel.setEffect(new DropShadow(20, Color.BLACK));
 
@@ -339,8 +348,17 @@ public class SetupView extends StackPane {
         // Input: Player Count
         VBox countBox = createStyledInputGroup("Total Players", createCustomSpinner());
 
-        HBox topSettings = new HBox(30, sizeBox, countBox);
+        // Input: Bot Count
+        VBox botCountBox = createStyledInputGroup("Number of Bots", createBotCountSpinner());
+
+        // Input: Bot Difficulty
+        VBox botDiffBox = createStyledInputGroup("Bot Difficulty", createBotDifficultyCombo());
+
+        HBox topSettings = new HBox(20, sizeBox, countBox);
         topSettings.setAlignment(Pos.CENTER);
+
+        HBox botSettings = new HBox(20, botCountBox, botDiffBox);
+        botSettings.setAlignment(Pos.CENTER);
 
         // --- 5. Player List Section ---
         Label lblPlayers = new Label("PLAYER CONFIGURATION");
@@ -354,7 +372,9 @@ public class SetupView extends StackPane {
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(300);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.getStylesheets().add("data:text/css,.scroll-pane > .viewport { -fx-background-color: transparent; }"); // Hack CSS inline
+        scrollPane.getStylesheets()
+                .add("data:text/css,.scroll-pane > .viewport { -fx-background-color: transparent; }"); // Hack CSS
+                                                                                                       // inline
 
         // Init awal (2 pemain)
         refreshPlayerInputs(2);
@@ -370,7 +390,8 @@ public class SetupView extends StackPane {
         actionBox.getChildren().addAll(btnBack, btnStart);
 
         // Susun semua ke Panel Utama
-        mainPanel.getChildren().addAll(title, topSettings, new Separator(), lblPlayers, scrollPane, actionBox);
+        mainPanel.getChildren().addAll(title, topSettings, botSettings, new Separator(), lblPlayers, scrollPane,
+                actionBox);
 
         // Susun ke Root StackPane
         this.getChildren().addAll(backgroundLayer, mainPanel);
@@ -379,14 +400,16 @@ public class SetupView extends StackPane {
     // --- Helper Logic: Refresh List Player ---
     private void refreshPlayerInputs(int count) {
         playersContainer.getChildren().clear();
-        Color[] defaults = {Color.RED, Color.LIME, Color.BLUE, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.ORANGE, Color.WHITE};
+        Color[] defaults = { Color.RED, Color.LIME, Color.BLUE, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.ORANGE,
+                Color.WHITE };
 
         for (int i = 0; i < count; i++) {
             HBox row = new HBox(15);
             row.setAlignment(Pos.CENTER_LEFT);
             row.setPadding(new Insets(10));
             // Style tiap baris player
-            row.setStyle("-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 10;");
+            row.setStyle(
+                    "-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 10;");
 
             Label lbl = new Label("#" + (i + 1));
             lbl.setTextFill(Color.GRAY);
@@ -401,7 +424,27 @@ public class SetupView extends StackPane {
             colorPicker.setPrefWidth(120);
             colorPicker.setStyle("-fx-background-color: #333; -fx-text-fill: white;");
 
-            row.getChildren().addAll(lbl, nameField, colorPicker);
+            // Auto-detect bot berdasarkan bot count
+            int botCount = botCountSpinner.getValue();
+            Label typeLabel = new Label("");
+            typeLabel.setPrefWidth(60);
+            typeLabel.setAlignment(Pos.CENTER);
+            typeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+
+            if (i >= count - botCount) {
+                nameField.setText("AI Bot " + (i - (count - botCount) + 1));
+                typeLabel.setText("🤖 BOT");
+                typeLabel.setTextFill(Color.CYAN);
+                typeLabel.setStyle(
+                        "-fx-background-color: rgba(0,255,255,0.1); -fx-background-radius: 5; -fx-padding: 3;");
+            } else {
+                typeLabel.setText("👤 HUMAN");
+                typeLabel.setTextFill(Color.LIME);
+                typeLabel
+                        .setStyle("-fx-background-color: rgba(0,255,0,0.1); -fx-background-radius: 5; -fx-padding: 3;");
+            }
+
+            row.getChildren().addAll(lbl, nameField, colorPicker, typeLabel);
             playersContainer.getChildren().add(row);
         }
     }
@@ -433,8 +476,45 @@ public class SetupView extends StackPane {
         playerCountSpinner.setPrefWidth(120);
         playerCountSpinner.setStyle("-fx-background-color: #333; -fx-body-color: #333; -fx-text-fill: white;");
         // Update list saat angka berubah
-        playerCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> refreshPlayerInputs(newVal));
+        playerCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+            // Pastikan bot count tidak melebihi total players
+            if (botCountSpinner != null && botCountSpinner.getValue() > newVal - 1) {
+                botCountSpinner.getValueFactory().setValue(Math.max(0, newVal - 1));
+            }
+            refreshPlayerInputs(newVal);
+        });
         return playerCountSpinner;
+    }
+
+    // --- Helper UI: Bot Count Spinner ---
+    private Spinner<Integer> createBotCountSpinner() {
+        botCountSpinner = new Spinner<>(0, 7, 0);
+        botCountSpinner.setEditable(false);
+        botCountSpinner.setPrefWidth(120);
+        botCountSpinner.setStyle("-fx-background-color: #333; -fx-text-fill: white;");
+
+        // Event: Refresh UI saat bot count berubah
+        botCountSpinner.valueProperty().addListener((obs, old, newVal) -> {
+            // Pastikan bot count tidak melebihi total players - 1 (minimal 1 human)
+            int maxBots = playerCountSpinner.getValue() - 1;
+            if (newVal > maxBots) {
+                botCountSpinner.getValueFactory().setValue(maxBots);
+                return;
+            }
+            refreshPlayerInputs(playerCountSpinner.getValue());
+        });
+
+        return botCountSpinner;
+    }
+
+    // --- Helper UI: Bot Difficulty ComboBox ---
+    private ComboBox<Difficulty> createBotDifficultyCombo() {
+        botDifficultyCombo = new ComboBox<>();
+        botDifficultyCombo.getItems().addAll(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD);
+        botDifficultyCombo.setValue(Difficulty.EASY);
+        botDifficultyCombo.setPrefWidth(120);
+        botDifficultyCombo.setStyle("-fx-background-color: #333; -fx-text-fill: white;");
+        return botDifficultyCombo;
     }
 
     // --- Helper UI: Styled Button ---
@@ -447,12 +527,10 @@ public class SetupView extends StackPane {
         String hexColor = toHexString(baseColor);
         String styleNormal = String.format(
                 "-fx-background-color: transparent; -fx-text-fill: %s; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 20; -fx-cursor: hand;",
-                hexColor, hexColor
-        );
+                hexColor, hexColor);
         String styleHover = String.format(
                 "-fx-background-color: %s; -fx-text-fill: black; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 20; -fx-cursor: hand;",
-                hexColor, hexColor
-        );
+                hexColor, hexColor);
 
         btn.setStyle(styleNormal);
         btn.setOnMouseEntered(e -> btn.setStyle(styleHover));
@@ -464,35 +542,41 @@ public class SetupView extends StackPane {
 
     // --- Logic Start ---
     private void processStart() {
-        int w = 9, h = 6;
-        // String selectedSize = boardSizeCombo.getValue();
         MapType selectedMap = boardSizeCombo.getValue();
-        // if (selectedMap.contains("Medium")) { w = 10; h = 10; }
-        // else if (selectedMap.contains("Large")) { w = 15; h = 10; }
+        Difficulty botDifficulty = botDifficultyCombo.getValue();
+        int totalPlayers = playerCountSpinner.getValue();
+        int botCount = botCountSpinner.getValue();
 
         List<Player> players = new ArrayList<>();
-        int id = 0;
+        List<Boolean> botFlags = new ArrayList<>();
+
+        int index = 0;
         for (javafx.scene.Node node : playersContainer.getChildren()) {
             if (node instanceof HBox) {
                 HBox row = (HBox) node;
                 TextField tf = (TextField) row.getChildren().get(1);
                 ColorPicker cp = (ColorPicker) row.getChildren().get(2);
+
                 players.add(new Player(tf.getText(), cp.getValue()));
+                // Player terakhir sebanyak botCount adalah bot
+                botFlags.add(index >= totalPlayers - botCount);
+                index++;
             }
         }
-        onStartGame.accept(new GameConfig(selectedMap, players));
+        onStartGame.accept(new GameConfig(selectedMap, players, botFlags, botDifficulty));
     }
 
     // --- Background Animation (Sama dgn Menu) ---
     private void createFloatingAtoms(Pane pane) {
         Random rand = new Random();
         List<Circle> atoms = new ArrayList<>();
-        Color[] colors = {Color.RED, Color.CYAN, Color.LIME, Color.YELLOW};
+        Color[] colors = { Color.RED, Color.CYAN, Color.LIME, Color.YELLOW };
 
         for (int i = 0; i < 20; i++) {
             Circle c = new Circle(rand.nextInt(4) + 2, colors[rand.nextInt(4)]);
             c.setOpacity(0.2);
-            c.setTranslateX(rand.nextInt(800)); c.setTranslateY(rand.nextInt(600));
+            c.setTranslateX(rand.nextInt(800));
+            c.setTranslateY(rand.nextInt(600));
             pane.getChildren().add(c);
             atoms.add(c);
         }
@@ -500,7 +584,8 @@ public class SetupView extends StackPane {
             public void handle(long now) {
                 for (Circle c : atoms) {
                     c.setTranslateY(c.getTranslateY() - 0.3);
-                    if (c.getTranslateY() < 0) c.setTranslateY(pane.getHeight() + 10);
+                    if (c.getTranslateY() < 0)
+                        c.setTranslateY(pane.getHeight() + 10);
                 }
             }
         }.start();

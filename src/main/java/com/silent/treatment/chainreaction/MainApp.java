@@ -32,6 +32,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region; // Untuk header spacer
 import javafx.scene.control.Button;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -44,6 +46,8 @@ public class MainApp extends Application {
     private Circle turnIndicatorCircle;
     private VBox playersStatusBox;
     private GridPanel gameBoardView;
+    private StackPane globalGameRoot;
+    private BorderPane gameRoot;
 
     @Override
     public void start(Stage stage) {
@@ -63,7 +67,7 @@ public class MainApp extends Application {
         // // --- Header Section (Info Giliran) ---
         // HBox header = createHeader(gm);
         // root.setTop(header);
-        
+
         // // --- Center Section (Game Board) ---
         // // Bungkus GridPanel dalam VBox agar bisa ditengah-tengah
         // VBox centerContainer = new VBox(gameBoardView);
@@ -72,7 +76,7 @@ public class MainApp extends Application {
         // root.setCenter(centerContainer);
 
         // // --- Right Sidebar (Player Stats) ---
-        // VBox sidebar = createPlayerSidebar(gm);                                 
+        // VBox sidebar = createPlayerSidebar(gm);
         // root.setRight(sidebar);
 
         // // 4. Hubungkan Controller dengan UI Header
@@ -96,10 +100,9 @@ public class MainApp extends Application {
     private void showMainMenu() {
         MenuView menuView = new MenuView(
                 () -> showGameSetup(), // New Game
-                () -> System.exit(0),  // Exit
+                () -> System.exit(0), // Exit
                 this::startTutorial,
-                this::showDifficultySelection
-        );
+                null); // AI sudah terintegrasi di New Game, tidak perlu menu terpisah
         primaryStage.setScene(new Scene(menuView, 450, 700));
         primaryStage.centerOnScreen();
     }
@@ -107,111 +110,36 @@ public class MainApp extends Application {
     private void showGameSetup() {
         SetupView setupView = new SetupView(
                 config -> startGame(config),
-                () -> showMainMenu()
-        );
+                () -> showMainMenu());
         primaryStage.setScene(new Scene(setupView, 500, 600));
         primaryStage.centerOnScreen();
     }
-    private void showDifficultySelection() {
-        DifficultySelectionView diffView = new DifficultySelectionView(
-                this::startGameVsAI,
-                this::showMainMenu
-        );
-        primaryStage.setScene(new Scene(diffView, 450, 700));
-        primaryStage.centerOnScreen();
-    }
-    private void startGameVsAI(Difficulty difficulty) {
-        // 1. Setup Fixed AI Config (9x6 board)
-        // Asumsi: Player class tidak membutuhkan ID lagi, hanya Name dan Color
-        List<Player> players = new ArrayList<>();
-        players.add(new Player("Pemain", Color.RED)); // Player 1 (Manusia)
-        players.add(new Player("AI Bot", Color.CYAN)); // Player 2 (Komputer)
 
-        GameManager gm = GameManager.getInstance();
-        gm.initializeGame(MapType.SMALL, players);  // ✅ SMALL = 9x6
-
-        // 2. Init Controller & View
-        GameController controller = new GameController();
-        gameBoardView = new GridPanel(gm.getBoard(), controller);
-
-        // 3. Init AI Logic
-        AIController aiController = new AIController(controller, difficulty);
-
-        // 4. Setup Layout Utama
-        BorderPane gameRoot = new BorderPane();
-        gameRoot.setStyle("-fx-background-color: #121212;");
-        gameRoot.setTop(createHeader(gm));
-
-        VBox centerContainer = new VBox(gameBoardView);
-        centerContainer.setAlignment(Pos.CENTER);
-        centerContainer.setPadding(new Insets(20));
-        gameRoot.setCenter(centerContainer);
-
-        gameRoot.setRight(createPlayerSidebar(gm));
-
-        // 5. Hubungkan Logic (Game Over & Turn Change)
-        controller.setOnGameOver(() -> {
-            Player winner = gm.getWinner();
-
-            // Aksi saat tombol "VIEW BOARD" ditekan
-            Runnable onCloseDialog = () -> {
-                gameRoot.setEffect(null); // Hapus efek blur
-
-                // FIX: Lepaskan gameRoot dari StackPane sebelum menjadikannya root utama
-                if (gameRoot.getParent() instanceof Pane) {
-                    ((Pane) gameRoot.getParent()).getChildren().remove(gameRoot);
-                }
-
-                primaryStage.getScene().setRoot(gameRoot);
-            };
-
-            // Buat View Game Over
-            GameOverView gameOverView = new GameOverView(winner, this::showMainMenu, onCloseDialog);
-
-            // Beri efek Blur ke game di belakangnya
-            gameRoot.setEffect(new GaussianBlur(10));
-
-            // Tumpuk GameOverView di atas GameRoot
-            StackPane globalRoot = new StackPane(gameRoot, gameOverView);
-            primaryStage.getScene().setRoot(globalRoot);
-        });
-
-        // Cek apakah giliran AI setelah pemain jalan
-        controller.setOnTurnChanged(() -> {
-            updateGameInfo(gm);
-            // Check jika giliran AI (Player 2)
-            if (gm.getCurrentPlayer().getName().equals("AI Bot")) {
-                aiController.performMove();
-            }
-        });
-
-        // Init Data Awal
-        updateGameInfo(gm);
-
-        // 6. Atur Scene
-        double winWidth = (9 * 60) + 350;
-        double winHeight = (6 * 60) + 150;
-        if (winWidth < 800) winWidth = 800;
-        if (winHeight < 600) winHeight = 600;
-
-        primaryStage.setScene(new Scene(gameRoot, winWidth, winHeight));
-        primaryStage.centerOnScreen();
-    }
 
     // --- BAGIAN 2: LOGIKA GAME (Gabungan Logic Revan + UI Faris) ---
 
     private void startGame(SetupView.GameConfig config) {
         // 1. Inisialisasi Core
         GameManager gm = GameManager.getInstance();
-        gm.initializeGame(config.mapType , config.players);
+        gm.initializeGame(config.mapType, config.players);
 
         // 2. Init Controller & View
         GameController controller = new GameController();
         gameBoardView = new GridPanel(gm.getBoard(), controller);
 
-        // 3. Setup Layout Utama
-        // SAYA UBAH NAMA VARIABEL 'root' MENJADI 'gameRoot' AGAR KONSISTEN
-        BorderPane gameRoot = new BorderPane();
+        // 3. Init AI Controllers untuk setiap bot player
+        List<AIController> aiControllers = new ArrayList<>();
+        for (int i = 0; i < config.players.size(); i++) {
+            if (config.isBot.get(i)) {
+                AIController ai = new AIController(controller, config.botDifficulty);
+                aiControllers.add(ai);
+            } else {
+                aiControllers.add(null); // Human player
+            }
+        }
+
+        // 4. Setup Layout Utama - gunakan instance variable
+        this.gameRoot = new BorderPane();
         gameRoot.setStyle("-fx-background-color: #121212;");
 
         // --- Header Section ---
@@ -226,31 +154,38 @@ public class MainApp extends Application {
         // --- Right Sidebar ---
         gameRoot.setRight(createPlayerSidebar(gm));
 
-        // 4. Hubungkan Controller dengan UI
-        controller.setOnTurnChanged(() -> updateGameInfo(gm));
-        
+        // 5. Hubungkan Controller dengan UI - dengan AI support
+        controller.setOnTurnChanged(() -> {
+            updateGameInfo(gm);
+
+            // Check if current player is bot
+            int currentIndex = gm.getPlayers().indexOf(gm.getCurrentPlayer());
+            AIController currentAI = aiControllers.get(currentIndex);
+
+            if (currentAI != null) { // Bot's turn
+                javafx.application.Platform.runLater(() -> {
+                    PauseTransition delay = new PauseTransition(Duration.millis(1000));
+                    delay.setOnFinished(e -> currentAI.performMove());
+                    delay.play();
+                });
+            }
+        });
+
         // Setup animation callback
         controller.setOnAnimationStart(() -> {
             if (gameBoardView != null) {
                 gameBoardView.startAnimationProcessing();
             }
         });
-        
-// [LOGIC GAME OVER]
+
+        // [LOGIC GAME OVER]
         controller.setOnGameOver(() -> {
             Player winner = gm.getWinner();
 
             // Aksi saat tombol "VIEW BOARD" ditekan
             Runnable onCloseDialog = () -> {
                 gameRoot.setEffect(null); // Hapus efek blur
-
-                // === PERBAIKAN CRITICAL ERROR ===
-                // Lepaskan gameRoot dari StackPane sebelum menjadikannya root utama
-                if (gameRoot.getParent() instanceof Pane) {
-                    ((Pane) gameRoot.getParent()).getChildren().remove(gameRoot);
-                }
-
-                primaryStage.getScene().setRoot(gameRoot);
+                globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance);
             };
 
             // Buat View Game Over
@@ -259,26 +194,27 @@ public class MainApp extends Application {
             // Beri efek Blur ke game di belakangnya
             gameRoot.setEffect(new GaussianBlur(10));
 
-            // Tumpuk GameOverView di atas GameRoot
-            StackPane globalRoot = new StackPane(gameRoot, gameOverView);
-            primaryStage.getScene().setRoot(globalRoot);
+            // Tambahkan ke globalGameRoot yang sudah ada
+            globalGameRoot.getChildren().add(gameOverView);
         });
 
         // Init Data Awal
         updateGameInfo(gm);
 
-        // 5. Atur Scene (Ukuran dinamis menyesuaikan board)
-        // Estimasi: (lebar board * 60px) + Sidebar(250) + Padding(100)
-        // double winWidth = (config.width * 60) + 350;
-        // double winHeight = (config.height * 60) + 150;
+        // Setup globalGameRoot PERTAMA (sebelum gameRoot masuk scene graph)
+        globalGameRoot = new StackPane(gameRoot);
+
+        // 6. Atur Scene (Ukuran dinamis menyesuaikan board)
         double winWidth = (config.mapType.getWidth() * 60) + 350;
         double winHeight = (config.mapType.getHeight() * 60) + 150;
 
-        if (winWidth < 800) winWidth = 800;
-        if (winHeight < 600) winHeight = 600;
+        if (winWidth < 800)
+            winWidth = 800;
+        if (winHeight < 600)
+            winHeight = 600;
 
-        // Gunakan gameRoot sebagai scene awal
-        primaryStage.setScene(new Scene(gameRoot, winWidth, winHeight));
+        // PENTING: Gunakan globalGameRoot sebagai root, bukan gameRoot langsung
+        primaryStage.setScene(new Scene(globalGameRoot, winWidth, winHeight));
         primaryStage.centerOnScreen();
     }
 
@@ -303,9 +239,10 @@ public class MainApp extends Application {
         header.getChildren().addAll(titleLabel, turnIndicatorCircle, turnLabel);
         return header;
     }
+
     private void startTutorial() {
         TutorialView tutorialView = new TutorialView(this::showMainMenu);
-        primaryStage.setScene(new Scene(tutorialView, 550, 750));
+        primaryStage.setScene(new Scene(tutorialView, 700, 600));
         primaryStage.centerOnScreen();
     }
 
@@ -314,13 +251,13 @@ public class MainApp extends Application {
         sidebar.setPadding(new Insets(20));
         sidebar.setPrefWidth(250);
         sidebar.setStyle("-fx-background-color: #181818; -fx-border-color: #333; -fx-border-width: 0 0 0 2;");
-        
+
         Label title = new Label("PLAYER STATUS");
         title.setTextFill(Color.WHITE);
         title.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 16));
-        
-        playersStatusBox = new VBox(10); 
-        
+
+        playersStatusBox = new VBox(10);
+
         sidebar.getChildren().addAll(title, new Separator(), playersStatusBox);
         return sidebar;
     }
@@ -367,7 +304,7 @@ public class MainApp extends Application {
             } else {
                 // Jika Mati: Tampilkan status Game Over
                 pName.setTextFill(Color.DARKGRAY); // Nama diredupkan
-                pIcon.setFill(Color.DARKGRAY);     // Icon warna diredupkan (opsional)
+                pIcon.setFill(Color.DARKGRAY); // Icon warna diredupkan (opsional)
 
                 pStatus.setText("GAME OVER");
                 pStatus.setTextFill(Color.RED); // Tulisan merah agar tegas

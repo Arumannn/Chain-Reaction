@@ -21,9 +21,9 @@ import java.util.List;
 public class TutorialView extends BorderPane {
 
     public TutorialView(Runnable onExit) {
-        // 1. Setup Game Manager (Board Kecil 4x4 cukup untuk tutorial)
+        // 1. Setup Game Manager (Board Kecil 6x9 untuk tutorial)
         GameManager gm = GameManager.getInstance();
-        MapType mapType = MapType.SMALL;
+        MapType mapType = MapType.SMALL; // 9x6 board (landscape)
         List<Player> tutorialPlayers = new ArrayList<>();
         tutorialPlayers.add(new Player("YOU", Color.RED));
         tutorialPlayers.add(new Player("ENEMY", Color.LIMEGREEN));
@@ -43,14 +43,12 @@ public class TutorialView extends BorderPane {
                         "-fx-background-radius: 15;" +
                         "-fx-border-color: cyan;" +
                         "-fx-border-radius: 15;" +
-                        "-fx-effect: dropshadow(three-pass-box, rgba(0, 255, 255, 0.3), 10, 0, 0, 0);"
-        );
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0, 255, 255, 0.3), 10, 0, 0, 0);");
 
         // 3. Setup Controller
         TutorialController tutorialController = new TutorialController(
                 instructionLabel::setText,
-                onExit
-        );
+                onExit);
 
         // 4. Setup GridPanel
         GridPanel gameBoardView = new GridPanel(gm.getBoard(), tutorialController);
@@ -58,9 +56,11 @@ public class TutorialView extends BorderPane {
 
         // Listener Warna Board
         tutorialController.setOnTurnChanged(() -> {
-            // Karena ini tutorial, kita buat warna board merah saat user main, dan hijau saat AI main
-            // Tapi karena controller kita handle manual, kita bisa set statis atau ambil dari GM
-            // Untuk simpel: Biarkan merah (fokus ke player)
+            Player currentPlayer = gm.getCurrentPlayer();
+            if (currentPlayer != null) {
+                Color themeColor = currentPlayer.getColor();
+                gameBoardView.setBackgroundTheme(themeColor);
+            }
         });
 
         // 5. Layout
@@ -72,7 +72,8 @@ public class TutorialView extends BorderPane {
         lblTitle.setFont(Font.font("Impact", 24));
 
         StackPane btnSkip = createStyledButton("SKIP", Color.RED, onExit);
-        btnSkip.setMaxWidth(80); btnSkip.setMaxHeight(30);
+        btnSkip.setMaxWidth(80);
+        btnSkip.setMaxHeight(30);
 
         HBox header = new HBox(20, lblTitle, btnSkip);
         header.setAlignment(Pos.CENTER_RIGHT);
@@ -90,7 +91,10 @@ public class TutorialView extends BorderPane {
         txt.setFill(color);
         txt.setFont(Font.font("Arial", FontWeight.BOLD, 12));
         javafx.scene.shape.Rectangle border = new javafx.scene.shape.Rectangle(80, 30);
-        border.setFill(null); border.setStroke(color); border.setArcWidth(10); border.setArcHeight(10);
+        border.setFill(null);
+        border.setStroke(color);
+        border.setArcWidth(10);
+        border.setArcHeight(10);
         StackPane btn = new StackPane(border, txt);
         btn.setOnMouseClicked(e -> action.run());
         btn.setCursor(javafx.scene.Cursor.HAND);

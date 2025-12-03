@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 
 public class TutorialController extends GameController {
 
-
     // ===== ENUMS & STATE =====
     private enum Phase {
         DEMO_2_EXPLOSION,
@@ -47,9 +46,14 @@ public class TutorialController extends GameController {
     }
 
     @Override
-    public void setOnTurnChanged(Runnable onTurnChanged) { this.onTurnChanged = onTurnChanged; }
+    public void setOnTurnChanged(Runnable onTurnChanged) {
+        this.onTurnChanged = onTurnChanged;
+    }
+
     @Override
-    public void setOnGameOver(Runnable onGameOver) { this.onGameOver = onGameOver; }
+    public void setOnGameOver(Runnable onGameOver) {
+        this.onGameOver = onGameOver;
+    }
 
     // ===== MASTER DEMO FLOW (Sama) =====
     private void startDemoPhase() {
@@ -77,6 +81,12 @@ public class TutorialController extends GameController {
         GameManager gm = GameManager.getInstance();
         Cell target = gm.getBoard().getCell(0, 0);
 
+        // Safety check untuk null cell
+        if (target == null) {
+            transitionToNextPhase(0);
+            return;
+        }
+
         // executeDelayedMove sekarang menerima parameter advanceTurn
         executeDelayedMove(target, player, 1.5, false, () -> {
             instructionCallback.accept("Menambah orb kedua...");
@@ -91,6 +101,12 @@ public class TutorialController extends GameController {
     private void demo3Explosion(Player player) {
         GameManager gm = GameManager.getInstance();
         Cell target = gm.getBoard().getCell(0, 2);
+
+        // Safety check untuk null cell
+        if (target == null) {
+            transitionToNextPhase(0);
+            return;
+        }
 
         executeDelayedMove(target, player, 1.0, false, () -> {
             executeDelayedMove(target, player, 1.0, false, () -> {
@@ -107,6 +123,12 @@ public class TutorialController extends GameController {
     private void demo4Explosion(Player player) {
         GameManager gm = GameManager.getInstance();
         Cell target = gm.getBoard().getCell(2, 2);
+
+        // Safety check untuk null cell
+        if (target == null) {
+            transitionToNextPhase(0);
+            return;
+        }
 
         executeDelayedMove(target, player, 0.8, false, () -> {
             executeDelayedMove(target, player, 0.8, false, () -> {
@@ -125,7 +147,8 @@ public class TutorialController extends GameController {
         PauseTransition transition = new PauseTransition(Duration.seconds(delay));
         transition.setOnFinished(e -> {
             resetBoardData();
-            if (onTurnChanged != null) onTurnChanged.run(); // Update UI setelah reset
+            if (onTurnChanged != null)
+                onTurnChanged.run(); // Update UI setelah reset
 
             switch (currentPhase) {
                 case DEMO_2_EXPLOSION:
@@ -151,7 +174,11 @@ public class TutorialController extends GameController {
         GameManager gm = GameManager.getInstance();
         for (int i = 0; i < gm.getBoard().getWidth(); i++) {
             for (int j = 0; j < gm.getBoard().getHeight(); j++) {
-                gm.getBoard().getCell(i, j).setOrbs(0);
+                Cell cell = gm.getBoard().getCell(i, j);
+                // CRITICAL: Skip null cells untuk custom maps
+                if (cell != null) {
+                    cell.setOrbs(0);
+                }
             }
         }
     }
@@ -159,13 +186,15 @@ public class TutorialController extends GameController {
     // ===== PHASE 2: INTERACTIVE PLAY (PERBAIKAN LOGIC) =====
 
     private void startInteractiveMode() {
-        instructionCallback.accept("🎮 MODE LATIHAN\n\nGiliranmu! Kalahkan AI.\n(AI di mode ini sangat lemah, manfaatkan untuk belajar menang)");
+        instructionCallback.accept(
+                "🎮 MODE LATIHAN\n\nGiliranmu! Kalahkan AI.\n(AI di mode ini sangat lemah, manfaatkan untuk belajar menang)");
         isProcessing = false; // Buka kunci input user
     }
 
     @Override
     public void handleCellClick(Cell cell) {
-        if (currentPhase != Phase.INTERACTIVE_NOOB || isProcessing) return;
+        if (currentPhase != Phase.INTERACTIVE_NOOB || isProcessing)
+            return;
 
         GameManager gm = GameManager.getInstance();
         Player human = gm.getPlayers().get(0);
@@ -180,7 +209,8 @@ public class TutorialController extends GameController {
         processMove(cell, human, true); // Player move ADVANCES turn
 
         // Cek Menang
-        if (checkGameEnd()) return;
+        if (checkGameEnd())
+            return;
 
         // 2. Jalan AI (Delay biar natural)
         instructionCallback.accept("AI sedang berpikir...");
@@ -256,7 +286,8 @@ public class TutorialController extends GameController {
         // [Implementasi logika Noob AI yang selalu kalah ada di sini]
         // ... (Logika sama persis dengan yang kita bahas sebelumnya)
 
-        // Karena kita belum mengimplementasikan MinimaxEngine/StandardEvaluator di sini,
+        // Karena kita belum mengimplementasikan MinimaxEngine/StandardEvaluator di
+        // sini,
         // kita gunakan logika heuristik sederhana yang mencari posisi terburuk.
 
         // Logika ini harus diimplementasikan di sini jika kita ingin menghindari
@@ -272,7 +303,8 @@ public class TutorialController extends GameController {
         for (int i = 0; i < board.getWidth(); i++) {
             for (int j = 0; j < board.getHeight(); j++) {
                 Cell c = board.getCell(i, j);
-                if (c.getOwner() == null || c.getOwner().equals(ai)) {
+                // Skip null cells untuk custom maps
+                if (c != null && (c.getOwner() == null || c.getOwner().equals(ai))) {
                     legalMoves.add(c);
                 }
             }
@@ -280,7 +312,8 @@ public class TutorialController extends GameController {
 
         // Strategi NOOB: Cari tempat aman yang jauh dari musuh (yang sebenarnya buruk)
         // Atau ambil random move
-        if (legalMoves.isEmpty()) return null;
+        if (legalMoves.isEmpty())
+            return null;
 
         // Langsung ambil random move (pola pikir paling bodoh)
         return legalMoves.get(rand.nextInt(legalMoves.size()));
@@ -288,7 +321,8 @@ public class TutorialController extends GameController {
 
     // Helper untuk menjalankan urutan klik demo
     // NOTE: Sekarang menerima 'advanceTurn'
-    private void executeDelayedMove(Cell cell, Player player, double delaySeconds, boolean advanceTurn, Runnable onComplete) {
+    private void executeDelayedMove(Cell cell, Player player, double delaySeconds, boolean advanceTurn,
+            Runnable onComplete) {
         PauseTransition pause = new PauseTransition(Duration.seconds(delaySeconds));
         pause.setOnFinished(e -> {
             processMove(cell, player, advanceTurn);
