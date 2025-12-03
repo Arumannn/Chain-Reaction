@@ -34,13 +34,13 @@ public class GameOverView extends StackPane {
         // Warna border menyesuaikan warna pemenang
         String hexColor = toHexString(winner.getColor());
         dialog.setStyle(
-                (isBotWinner ? "-fx-background-color: #1a0a0a;" : "-fx-background-color: #1e1e1e;") +
+                (isBotWinner ? "-fx-background-color: #1a0a0a;" : "-fx-background-color: #1a1a1a;") +
                         "-fx-border-color: " + hexColor + ";" +
-                        "-fx-border-width: 3;" +
-                        "-fx-border-radius: 20;" +
-                        "-fx-background-radius: 20;" +
-                        "-fx-effect: dropshadow(three-pass-box, " + hexColor + ", 20, 0, 0, 0);"
+                        "-fx-border-width: 4;" +
+                        "-fx-border-radius: 0;" +
+                        "-fx-background-radius: 0;"
         );
+        dialog.getStyleClass().add("dialog-panel");
 
         // 3. Teks Pemenang
         Label lblTitle = new Label(isBotWinner ? "DEFEAT" : "WINNER!");
@@ -90,9 +90,9 @@ public class GameOverView extends StackPane {
         Rectangle border = new Rectangle(140, 40);
         border.setFill(null);
         border.setStroke(color);
-        border.setStrokeWidth(2);
-        border.setArcWidth(10);
-        border.setArcHeight(10);
+        border.setStrokeWidth(3);
+        border.setArcWidth(0);
+        border.setArcHeight(0);
 
         StackPane btn = new StackPane(border, txt);
         btn.setOnMouseClicked(e -> action.run());

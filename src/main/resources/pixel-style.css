@@ -1,0 +1,500 @@
+/* ============================================
+   PIXEL / RETRO GAME STYLE CSS
+   ============================================
+   No external assets - Pure JavaFX CSS
+   Sharp, blocky borders - No rounded corners
+   Thick borders - Solid colors - Hard shadows
+   ============================================ */
+
+/* ============================================
+   ROOT & BASE STYLES
+   ============================================ */
+.root {
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-font-size: 14px;
+    -fx-background-color: #0a0a0a;
+}
+
+/* ============================================
+   BUTTONS - PIXEL STYLE
+   ============================================ */
+.button {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #444444;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 16px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 4, 0, 2, 2);
+}
+
+.button:hover {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #666666;
+    -fx-effect: dropshadow(one-pass-box, #ffffff, 4, 0, 2, 2);
+}
+
+.button:pressed {
+    -fx-background-color: #0a0a0a;
+    -fx-border-color: #222222;
+    -fx-effect: dropshadow(one-pass-box, #000000, 2, 0, 1, 1);
+    -fx-translate-x: 1px;
+    -fx-translate-y: 1px;
+}
+
+.button:focused {
+    -fx-border-color: #00ff00;
+    -fx-border-width: 4px;
+}
+
+/* Special button variants */
+.button.on-state {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #00ff00;
+    -fx-border-color: #00ff00;
+}
+
+.button.off-state {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #888888;
+    -fx-border-color: #888888;
+}
+
+/* ============================================
+   LABELS - PIXEL STYLE
+   ============================================ */
+.label {
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.label.title {
+    -fx-font-size: 24px;
+    -fx-text-fill: #00ffff;
+    -fx-effect: dropshadow(one-pass-box, #000000, 6, 0, 3, 3);
+}
+
+.label.subtitle {
+    -fx-font-size: 18px;
+    -fx-text-fill: #ffff00;
+    -fx-effect: dropshadow(one-pass-box, #000000, 4, 0, 2, 2);
+}
+
+.label.header {
+    -fx-font-size: 16px;
+    -fx-text-fill: #00ff00;
+    -fx-effect: dropshadow(one-pass-box, #000000, 3, 0, 1, 1);
+}
+
+.label.info {
+    -fx-font-size: 12px;
+    -fx-text-fill: #cccccc;
+}
+
+/* ============================================
+   TEXT - PIXEL STYLE
+   ============================================ */
+.text {
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-font-weight: bold;
+}
+
+/* ============================================
+   PANELS & CONTAINERS - PIXEL STYLE
+   ============================================ */
+.pane {
+    -fx-background-color: #0a0a0a;
+}
+
+.vbox, .hbox {
+    -fx-background-color: transparent;
+}
+
+/* Main panels with borders */
+.panel-main {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #444444;
+    -fx-border-width: 4px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 8, 0, 4, 4);
+    -fx-padding: 20px;
+}
+
+.panel-secondary {
+    -fx-background-color: #151515;
+    -fx-border-color: #333333;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 6, 0, 3, 3);
+}
+
+.panel-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.85);
+}
+
+/* ============================================
+   GRID PANEL & CELLS - PIXEL STYLE
+   ============================================ */
+.grid-pane {
+    -fx-background-color: #0f0f0f;
+    -fx-border-color: #333333;
+    -fx-border-width: 4px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 6, 0, 3, 3);
+    -fx-padding: 10px;
+}
+
+/* Cell styling (applied via CSS class) */
+.cell {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #444444;
+    -fx-border-width: 2px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.cell:hover {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #666666;
+}
+
+.cell.owned {
+    -fx-border-color: #00ff00;
+    -fx-border-width: 3px;
+}
+
+.cell.critical {
+    -fx-border-color: #ff0000;
+    -fx-border-width: 4px;
+    -fx-effect: dropshadow(one-pass-box, #ff0000, 8, 0, 0, 0);
+}
+
+/* ============================================
+   ORBS / BALLS - PIXEL STYLE
+   ============================================ */
+/* Note: Circles are styled via inline styles in code, but we can add general rules */
+.circle {
+    -fx-stroke: #000000;
+    -fx-stroke-width: 2px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 4, 0, 2, 2);
+}
+
+.circle.critical {
+    -fx-stroke: #ffffff;
+    -fx-stroke-width: 3px;
+    -fx-effect: dropshadow(one-pass-box, #ff0000, 6, 0, 0, 0);
+}
+
+/* ============================================
+   TEXT FIELDS - PIXEL STYLE
+   ============================================ */
+.text-field {
+    -fx-background-color: #0a0a0a;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #444444;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-font-size: 14px;
+    -fx-padding: 6px 10px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 3, 0, 1, 1);
+}
+
+.text-field:focused {
+    -fx-border-color: #00ff00;
+    -fx-border-width: 4px;
+    -fx-effect: dropshadow(one-pass-box, #00ff00, 4, 0, 2, 2);
+}
+
+/* ============================================
+   COMBO BOX - PIXEL STYLE
+   ============================================ */
+.combo-box {
+    -fx-background-color: #0a0a0a;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #444444;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-font-size: 14px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 3, 0, 1, 1);
+}
+
+.combo-box:hover {
+    -fx-border-color: #666666;
+}
+
+.combo-box:focused {
+    -fx-border-color: #00ff00;
+    -fx-border-width: 4px;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+}
+
+.combo-box .list-cell:hover {
+    -fx-background-color: #2a2a2a;
+    -fx-text-fill: #00ff00;
+}
+
+.combo-box .list-view {
+    -fx-background-color: #0a0a0a;
+    -fx-border-color: #444444;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.combo-box .arrow-button {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #444444;
+    -fx-border-width: 0 0 0 3px;
+}
+
+.combo-box .arrow-button:hover {
+    -fx-background-color: #2a2a2a;
+}
+
+/* ============================================
+   SPINNER - PIXEL STYLE
+   ============================================ */
+.spinner {
+    -fx-background-color: #0a0a0a;
+    -fx-border-color: #444444;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-effect: dropshadow(one-pass-box, #000000, 3, 0, 1, 1);
+}
+
+.spinner .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0px;
+    -fx-effect: none;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #444444;
+    -fx-border-width: 2px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #666666;
+}
+
+.spinner .increment-arrow-button:pressed,
+.spinner .decrement-arrow-button:pressed {
+    -fx-background-color: #0a0a0a;
+}
+
+/* ============================================
+   SCROLL PANE - PIXEL STYLE
+   ============================================ */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: #333333;
+    -fx-border-width: 2px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane .scroll-bar {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #444444;
+    -fx-border-width: 2px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.scroll-pane .scroll-bar .thumb {
+    -fx-background-color: #444444;
+    -fx-border-color: #666666;
+    -fx-border-width: 1px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.scroll-pane .scroll-bar .thumb:hover {
+    -fx-background-color: #555555;
+    -fx-border-color: #777777;
+}
+
+.scroll-pane .scroll-bar .increment-button,
+.scroll-pane .scroll-bar .decrement-button {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #444444;
+    -fx-border-width: 1px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.scroll-pane .scroll-bar .increment-button:hover,
+.scroll-pane .scroll-bar .decrement-button:hover {
+    -fx-background-color: #2a2a2a;
+}
+
+/* ============================================
+   SEPARATOR - PIXEL STYLE
+   ============================================ */
+.separator {
+    -fx-background-color: #444444;
+    -fx-pref-height: 2px;
+}
+
+.separator .line {
+    -fx-border-color: #444444;
+    -fx-border-width: 2px;
+}
+
+/* ============================================
+   COLOR PICKER - PIXEL STYLE
+   ============================================ */
+.color-picker {
+    -fx-background-color: #0a0a0a;
+    -fx-border-color: #444444;
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-font-family: "Monospaced", "Courier New", monospace;
+    -fx-effect: dropshadow(one-pass-box, #000000, 3, 0, 1, 1);
+}
+
+.color-picker:hover {
+    -fx-border-color: #666666;
+}
+
+.color-picker:focused {
+    -fx-border-color: #00ff00;
+    -fx-border-width: 4px;
+}
+
+.color-picker .color-picker-label .text {
+    -fx-fill: #ffffff;
+}
+
+/* ============================================
+   STACK PANE BUTTONS (Custom) - PIXEL STYLE
+   ============================================ */
+/* For custom StackPane buttons created in code */
+.stack-pane-button {
+    -fx-background-color: transparent;
+}
+
+/* ============================================
+   HEADER / SIDEBAR - PIXEL STYLE
+   ============================================ */
+.header-panel {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #333333;
+    -fx-border-width: 0 0 4px 0;
+    -fx-effect: dropshadow(one-pass-box, #000000, 4, 0, 2, 2);
+}
+
+.sidebar-panel {
+    -fx-background-color: #151515;
+    -fx-border-color: #333333;
+    -fx-border-width: 0 0 0 4px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 4, 0, 2, 2);
+}
+
+/* ============================================
+   PLAYER ROW - PIXEL STYLE
+   ============================================ */
+.player-row {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #333333;
+    -fx-border-width: 2px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-padding: 8px;
+}
+
+.player-row.current {
+    -fx-background-color: #2a2a2a;
+    -fx-border-color: #00ff00;
+    -fx-border-width: 3px;
+    -fx-effect: dropshadow(one-pass-box, #00ff00, 4, 0, 2, 2);
+}
+
+/* ============================================
+   DIALOG / OVERLAY - PIXEL STYLE
+   ============================================ */
+.dialog-panel {
+    -fx-background-color: #1a1a1a;
+    -fx-border-color: #00ffff;
+    -fx-border-width: 4px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 12, 0, 6, 6);
+    -fx-padding: 30px;
+}
+
+.dialog-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.85);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.pixel-border {
+    -fx-border-width: 3px;
+    -fx-border-radius: 0px;
+    -fx-background-radius: 0px;
+}
+
+.pixel-shadow {
+    -fx-effect: dropshadow(one-pass-box, #000000, 4, 0, 2, 2);
+}
+
+.pixel-shadow-large {
+    -fx-effect: dropshadow(one-pass-box, #000000, 8, 0, 4, 4);
+}
+
+.pixel-glow-green {
+    -fx-effect: dropshadow(one-pass-box, #00ff00, 6, 0, 0, 0);
+}
+
+.pixel-glow-red {
+    -fx-effect: dropshadow(one-pass-box, #ff0000, 6, 0, 0, 0);
+}
+
+.pixel-glow-cyan {
+    -fx-effect: dropshadow(one-pass-box, #00ffff, 6, 0, 0, 0);
+}
+
+/* ============================================
+   RETRO COLOR PALETTE
+   ============================================ */
+/* Primary colors for retro feel */
+.retro-green { -fx-text-fill: #00ff00; }
+.retro-red { -fx-text-fill: #ff0000; }
+.retro-blue { -fx-text-fill: #0000ff; }
+.retro-yellow { -fx-text-fill: #ffff00; }
+.retro-cyan { -fx-text-fill: #00ffff; }
+.retro-magenta { -fx-text-fill: #ff00ff; }
+.retro-white { -fx-text-fill: #ffffff; }
+.retro-gray { -fx-text-fill: #888888; }
+

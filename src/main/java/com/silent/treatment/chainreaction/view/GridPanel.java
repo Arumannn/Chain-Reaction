@@ -100,12 +100,13 @@ public class GridPanel extends StackPane {
 
         gridPane.setStyle(
                 "-fx-background-color: " + rgba + ";" +
-                        "-fx-padding: 15;" +
-                        "-fx-background-radius: 15;" +
-                        "-fx-border-color: #444;" +
-                        "-fx-border-radius: 15;" +
-                        "-fx-border-width: 2;"
+                        "-fx-padding: 10;" +
+                        "-fx-background-radius: 0;" +
+                        "-fx-border-color: #333333;" +
+                        "-fx-border-radius: 0;" +
+                        "-fx-border-width: 4;"
         );
+        gridPane.getStyleClass().add("grid-pane");
     }
 
     private void initializeUI(Board board) {
@@ -169,11 +170,12 @@ public class GridPanel extends StackPane {
             this.setUserData(cell);
 
             border = new Rectangle(55, 55);
-            border.setFill(Color.valueOf("#2b2b2b"));
+            border.setFill(Color.valueOf("#1a1a1a"));
             border.setStroke(Color.valueOf("#444444"));
-            border.setStrokeWidth(2);
-            border.setArcWidth(15);
-            border.setArcHeight(15);
+            border.setStrokeWidth(3);
+            border.setArcWidth(0);
+            border.setArcHeight(0);
+            this.getStyleClass().add("cell");
 
             glowEffect = new DropShadow();
             glowEffect.setRadius(15);
@@ -188,11 +190,11 @@ public class GridPanel extends StackPane {
 
             this.setOnMouseEntered(e -> {
                 if (!playerInputEnabled) return;
-                if(cell.getOwner() == null) border.setFill(Color.valueOf("#383838"));
+                if(cell.getOwner() == null) border.setFill(Color.valueOf("#2a2a2a"));
             });
             this.setOnMouseExited(e -> {
                 if (!playerInputEnabled) return;
-                if(cell.getOwner() == null) border.setFill(Color.valueOf("#2b2b2b"));
+                if(cell.getOwner() == null) border.setFill(Color.valueOf("#1a1a1a"));
             });
 
             this.setOnMouseClicked(e -> {
@@ -232,12 +234,18 @@ public class GridPanel extends StackPane {
         private Circle createBall(Color color) {
             Circle ball = new Circle(8);
             ball.setFill(color);
+            ball.setStroke(Color.BLACK);
+            ball.setStrokeWidth(2);
             
-            DropShadow ballGlow = new DropShadow();
-            ballGlow.setRadius(12);
-            ballGlow.setSpread(0.5);
-            ballGlow.setColor(color);
-            ball.setEffect(ballGlow);
+            // Hard pixel shadow instead of glow
+            DropShadow ballShadow = new DropShadow();
+            ballShadow.setRadius(4);
+            ballShadow.setSpread(0);
+            ballShadow.setColor(Color.BLACK);
+            ballShadow.setOffsetX(2);
+            ballShadow.setOffsetY(2);
+            ball.setEffect(ballShadow);
+            ball.getStyleClass().add("circle");
             
             return ball;
         }
@@ -404,7 +412,9 @@ public class GridPanel extends StackPane {
                 if (count > 0 && cell.getOwner() != null) {
                     Color pColor = cell.getOwner().getColor();
 
-                    border.setStroke(pColor.darker());
+                    border.setStroke(pColor);
+                    border.setStrokeWidth(3);
+                    this.getStyleClass().add("owned");
 
                     // Update jumlah bola
                     ballContainer.getChildren().clear();
@@ -429,11 +439,17 @@ public class GridPanel extends StackPane {
                     
                     // Jika sudah kritis (siap meledak), beri indikasi visual
                     if (count >= cell.getCriticalMass()) {
-                        // Tambahkan outline putih pada semua bola
+                        // Tambahkan outline putih pada semua bola dan cell
                         for (Circle ball : balls) {
                             ball.setStroke(Color.WHITE);
-                            ball.setStrokeWidth(2);
+                            ball.setStrokeWidth(3);
+                            ball.getStyleClass().add("critical");
                         }
+                        this.getStyleClass().add("critical");
+                        border.setStroke(Color.valueOf("#ff0000"));
+                        border.setStrokeWidth(4);
+                    } else {
+                        this.getStyleClass().remove("critical");
                     }
                     
                     // Mulai animasi yang sesuai
@@ -441,6 +457,9 @@ public class GridPanel extends StackPane {
                     
                 } else {
                     border.setStroke(Color.valueOf("#444444"));
+                    border.setStrokeWidth(3);
+                    this.getStyleClass().remove("owned");
+                    this.getStyleClass().remove("critical");
                     ballContainer.getChildren().clear();
                     balls.clear();
                     

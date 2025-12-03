@@ -29,7 +29,7 @@ public class SettingsView extends StackPane {
 
         // Background
         Pane backgroundLayer = new Pane();
-        backgroundLayer.setStyle("-fx-background-color: #121212;");
+        backgroundLayer.setStyle("-fx-background-color: #0a0a0a;");
         createFloatingAtoms(backgroundLayer);
         this.getChildren().add(backgroundLayer);
 
@@ -39,12 +39,13 @@ public class SettingsView extends StackPane {
         mainPanel.setMaxHeight(400);
         mainPanel.setAlignment(Pos.CENTER);
         mainPanel.setStyle(
-                "-fx-background-color: rgba(30, 30, 30, 0.8);" +
-                "-fx-background-radius: 20;" +
-                "-fx-border-color: rgba(255, 255, 255, 0.2);" +
-                "-fx-border-radius: 20;" +
-                "-fx-border-width: 1;"
+                "-fx-background-color: #1a1a1a;" +
+                "-fx-background-radius: 0;" +
+                "-fx-border-color: #444444;" +
+                "-fx-border-radius: 0;" +
+                "-fx-border-width: 4;"
         );
+        mainPanel.getStyleClass().add("panel-main");
         mainPanel.setEffect(new DropShadow(20, Color.BLACK));
 
         // Title
@@ -105,9 +106,11 @@ public class SettingsView extends StackPane {
 
     private void updateButtonStyle(Button btn, boolean isMuted) {
         if (isMuted) {
-            btn.setStyle("-fx-background-color: #333; -fx-text-fill: gray; -fx-border-color: gray; -fx-background-radius: 5; -fx-border-radius: 5; -fx-cursor: hand;");
+            btn.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #888888; -fx-border-color: #888888; -fx-background-radius: 0; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+            btn.getStyleClass().add("off-state");
         } else {
-            btn.setStyle("-fx-background-color: #333; -fx-text-fill: lime; -fx-border-color: lime; -fx-background-radius: 5; -fx-border-radius: 5; -fx-cursor: hand;");
+            btn.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #00ff00; -fx-border-color: #00ff00; -fx-background-radius: 0; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+            btn.getStyleClass().add("on-state");
         }
     }
 
@@ -119,9 +122,9 @@ public class SettingsView extends StackPane {
         Rectangle border = new Rectangle(120, 40);
         border.setFill(null);
         border.setStroke(color);
-        border.setStrokeWidth(2);
-        border.setArcWidth(10);
-        border.setArcHeight(10);
+        border.setStrokeWidth(3);
+        border.setArcWidth(0);
+        border.setArcHeight(0);
 
         StackPane btn = new StackPane(border, txt);
         btn.setOnMouseClicked(e -> {

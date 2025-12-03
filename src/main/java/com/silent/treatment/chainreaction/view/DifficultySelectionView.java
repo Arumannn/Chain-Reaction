@@ -23,7 +23,7 @@ public class DifficultySelectionView extends VBox {
         this.setAlignment(Pos.CENTER);
         this.setSpacing(25);
         this.setPadding(new Insets(40));
-        this.setStyle("-fx-background-color: #121212;");
+        this.setStyle("-fx-background-color: #0a0a0a;");
 
         Label title = new Label("PILIH TINGKAT KESULITAN AI");
         title.setTextFill(Color.CYAN);
@@ -39,7 +39,7 @@ public class DifficultySelectionView extends VBox {
         buttons.getChildren().add(createDifficultyButton( "MODE SULIT (Hard)", Difficulty.HARD, onDifficultySelected, Color.RED));
 
         Button backButton = new Button("KEMBALI");
-        backButton.setStyle("-fx-background-color: transparent; -fx-text-fill: gray; -fx-border-color: gray; -fx-border-width: 1; -fx-background-radius: 5;");
+        backButton.setStyle("-fx-background-color: transparent; -fx-text-fill: #888888; -fx-border-color: #888888; -fx-border-width: 3; -fx-background-radius: 0; -fx-border-radius: 0;");
         backButton.setOnAction(e -> onBack.run());
 
         this.getChildren().addAll(title, buttons, backButton);
@@ -55,10 +55,10 @@ public class DifficultySelectionView extends VBox {
 
         String hexColor = String.format("#%02x%02x%02x", (int)(color.getRed()*255), (int)(color.getGreen()*255), (int)(color.getBlue()*255));
 
-        button.setStyle(String.format("-fx-background-color: #333333; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 5;", hexColor));
+        button.setStyle(String.format("-fx-background-color: #1a1a1a; -fx-border-color: %s; -fx-border-width: 3; -fx-border-radius: 0;", hexColor));
 
-        button.setOnMouseEntered(e -> button.setStyle(String.format("-fx-background-color: %s; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 5;", hexColor, hexColor)));
-        button.setOnMouseExited(e -> button.setStyle(String.format("-fx-background-color: #333333; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 5;", hexColor)));
+        button.setOnMouseEntered(e -> button.setStyle(String.format("-fx-background-color: %s; -fx-border-color: %s; -fx-border-width: 3; -fx-border-radius: 0;", hexColor, hexColor)));
+        button.setOnMouseExited(e -> button.setStyle(String.format("-fx-background-color: #1a1a1a; -fx-border-color: %s; -fx-border-width: 3; -fx-border-radius: 0;", hexColor)));
 
         button.setOnMouseClicked(e -> onSelect.accept(difficulty));
 

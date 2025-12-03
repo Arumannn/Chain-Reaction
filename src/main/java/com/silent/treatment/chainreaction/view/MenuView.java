@@ -41,7 +41,7 @@ public class MenuView extends StackPane {
         this.onVsAI = onVsAI;
 
         Pane backgroundLayer = new Pane();
-        backgroundLayer.setStyle("-fx-background-color: #121212;");
+        backgroundLayer.setStyle("-fx-background-color: #0a0a0a;");
         createFloatingAtoms(backgroundLayer);
         this.getChildren().add(backgroundLayer);
 
@@ -97,7 +97,8 @@ public class MenuView extends StackPane {
 
     private void showExitConfirmation() {
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
+        overlay.getStyleClass().add("dialog-overlay");
 
         VBox dialog = new VBox(20);
         dialog.setMaxWidth(400);
@@ -106,11 +107,12 @@ public class MenuView extends StackPane {
         dialog.setPadding(new javafx.geometry.Insets(30));
 
         dialog.setStyle(
-                "-fx-background-color: #1e1e1e;" +
-                        "-fx-border-color: red;" +
-                        "-fx-border-width: 2;" +
-                        "-fx-border-radius: 15;" +
-                        "-fx-background-radius: 15;");
+                "-fx-background-color: #1a1a1a;" +
+                        "-fx-border-color: #ff0000;" +
+                        "-fx-border-width: 4;" +
+                        "-fx-border-radius: 0;" +
+                        "-fx-background-radius: 0;");
+        dialog.getStyleClass().add("dialog-panel");
         dialog.setEffect(new DropShadow(30, Color.BLACK));
 
         Label lblTitle = new Label("EXIT GAME?");
@@ -177,9 +179,9 @@ public class MenuView extends StackPane {
         Rectangle border = new Rectangle(250, 50);
         border.setFill(null);
         border.setStroke(color);
-        border.setStrokeWidth(2);
-        border.setArcWidth(15);
-        border.setArcHeight(15);
+        border.setStrokeWidth(3);
+        border.setArcWidth(0);
+        border.setArcHeight(0);
         border.setEffect(new DropShadow(10, color));
 
         StackPane btn = new StackPane(border, txt);
@@ -203,11 +205,11 @@ public class MenuView extends StackPane {
         txt.setFill(Color.WHITE);
 
         Rectangle border = new Rectangle(120, 40);
-        border.setFill(color.deriveColor(0, 1, 1, 0.2));
+        border.setFill(color.deriveColor(0, 1, 1, 0.3));
         border.setStroke(color);
-        border.setStrokeWidth(2);
-        border.setArcWidth(10);
-        border.setArcHeight(10);
+        border.setStrokeWidth(3);
+        border.setArcWidth(0);
+        border.setArcHeight(0);
 
         StackPane btn = new StackPane(border, txt);
         // btn.setOnMouseClicked(e -> action.run());

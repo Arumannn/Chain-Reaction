@@ -31,7 +31,7 @@ public class GameLayout extends BorderPane {
         this.gridPanel = gridPanel;
         this.onMenuClick = onMenuClick;
 
-        this.setStyle("-fx-background-color: #121212;");
+        this.setStyle("-fx-background-color: #0a0a0a;");
         
         // Susun Layout
         this.setTop(createHeader());
@@ -67,7 +67,8 @@ public class GameLayout extends BorderPane {
         HBox header = new HBox(15);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(10, 20, 10, 20));
-        header.setStyle("-fx-background-color: #1f1f1f; -fx-border-color: #333; -fx-border-width: 0 0 2 0;");
+        header.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: #333333; -fx-border-width: 0 0 4 0;");
+        header.getStyleClass().add("header-panel");
 
         HBox turnInfoBox = new HBox(10);
         turnInfoBox.setAlignment(Pos.CENTER);
@@ -88,7 +89,7 @@ public class GameLayout extends BorderPane {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button btnMenu = new Button("MENU");
-        btnMenu.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-border-color: gray; -fx-border-radius: 5; -fx-cursor: hand;");
+        btnMenu.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #888888; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
         btnMenu.setFont(Font.font("Arial", FontWeight.BOLD, 12));
         btnMenu.setOnAction(e -> {
             SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
@@ -109,7 +110,8 @@ public class GameLayout extends BorderPane {
         VBox sidebar = new VBox(15);
         sidebar.setPadding(new Insets(20));
         sidebar.setPrefWidth(250);
-        sidebar.setStyle("-fx-background-color: #181818; -fx-border-color: #333; -fx-border-width: 0 0 0 2;");
+        sidebar.setStyle("-fx-background-color: #151515; -fx-border-color: #333333; -fx-border-width: 0 0 0 4;");
+        sidebar.getStyleClass().add("sidebar-panel");
 
         Label title = new Label("PLAYER STATUS");
         title.setTextFill(Color.WHITE);
@@ -126,8 +128,10 @@ public class GameLayout extends BorderPane {
         row.setPadding(new Insets(10));
 
         if (p.equals(current)) {
-            row.setStyle("-fx-background-color: #333; -fx-background-radius: 5;");
+            row.setStyle("-fx-background-color: #2a2a2a; -fx-background-radius: 0; -fx-border-color: #00ff00; -fx-border-width: 3;");
+            row.getStyleClass().add("current");
         }
+        row.getStyleClass().add("player-row");
 
         Circle icon = new Circle(5, p.getColor());
         VBox infoBox = new VBox(2);
