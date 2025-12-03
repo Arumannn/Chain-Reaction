@@ -55,7 +55,7 @@ public class TutorialView extends BorderPane {
         GridPanel gameBoardView = new GridPanel(gm.getBoard(), tutorialController);
         gameBoardView.setBackgroundTheme(Color.RED);
 
-        // Listener Warna Board
+        // Listener Warna Board + animasi ledakan
         tutorialController.setOnTurnChanged(() -> {
             Player currentPlayer = gm.getCurrentPlayer();
             if (currentPlayer != null) {
@@ -63,6 +63,7 @@ public class TutorialView extends BorderPane {
                 gameBoardView.setBackgroundTheme(themeColor);
             }
         });
+        tutorialController.setOnAnimationStart(gameBoardView::startAnimationProcessing);
 
         // 5. Layout
         this.setStyle("-fx-background-color: #121212;");

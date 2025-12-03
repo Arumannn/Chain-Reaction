@@ -233,10 +233,18 @@ public class TutorialController extends GameController {
         GameManager gm = GameManager.getInstance();
         cell.addOrb(player, gm.getBoard());
 
+        // Update informasi turn / UI
         if (onTurnChanged != null) {
             onTurnChanged.run();
         }
 
+        // Trigger animasi ledakan jika ada chain reaction yang berjalan
+        boolean isExploding = ExplosionQueue.getInstance().isProcessing();
+        if (isExploding && onAnimationStart != null) {
+            onAnimationStart.run();
+        }
+
+        // Tutorial tetap mengatur turn secara manual
         if (advanceTurn) {
             gm.nextTurn();
         }
