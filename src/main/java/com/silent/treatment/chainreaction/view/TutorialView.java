@@ -2,6 +2,7 @@ package com.silent.treatment.chainreaction.view;
 
 import com.silent.treatment.chainreaction.controller.TutorialController;
 import com.silent.treatment.chainreaction.core.GameManager;
+import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.model.MapType;
 import javafx.geometry.Insets;
@@ -92,7 +93,10 @@ public class TutorialView extends BorderPane {
         javafx.scene.shape.Rectangle border = new javafx.scene.shape.Rectangle(80, 30);
         border.setFill(null); border.setStroke(color); border.setArcWidth(10); border.setArcHeight(10);
         StackPane btn = new StackPane(border, txt);
-        btn.setOnMouseClicked(e -> action.run());
+        btn.setOnMouseClicked(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            action.run();
+        });
         btn.setCursor(javafx.scene.Cursor.HAND);
         return btn;
     }

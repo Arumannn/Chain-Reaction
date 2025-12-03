@@ -1,5 +1,6 @@
 package com.silent.treatment.chainreaction.view;
 
+import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.Player;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -90,6 +91,11 @@ public class GameOverView extends StackPane {
         btn.setOnMouseExited(e -> {
             border.setFill(null);
             txt.setFill(color);
+        });
+
+        btn.setOnMouseClicked(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            action.run();
         });
 
         return btn;

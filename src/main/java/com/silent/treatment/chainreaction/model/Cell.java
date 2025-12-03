@@ -1,5 +1,7 @@
 package com.silent.treatment.chainreaction.model;
 
+import com.silent.treatment.chainreaction.core.SoundManager;
+
 import com.silent.treatment.chainreaction.strategy.ExplosionStrategy;
 import com.silent.treatment.chainreaction.strategy.StandardExplosionStrategy;
 import com.silent.treatment.chainreaction.view.GameObserver;
@@ -39,6 +41,8 @@ public class Cell {
     public void addOrb(Player player, Board board) {
         this.owner = player; // Update Owner
         this.currentOrbs++;
+
+        SoundManager.getInstance().playSFX(SoundManager.SFX_POP);
 
         notifyObservers(); // Update UI
 

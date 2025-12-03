@@ -2,6 +2,7 @@ package com.silent.treatment.chainreaction;
 
 import com.silent.treatment.chainreaction.controller.GameController;
 import com.silent.treatment.chainreaction.core.GameManager;
+import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.GridPanel;
 import com.silent.treatment.chainreaction.view.MenuView;
@@ -79,6 +80,7 @@ public class MainApp extends Application {
         // 1. Inisialisasi Core
         GameManager gm = GameManager.getInstance();
         gm.initializeGame(config.mapType , config.players);
+        SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
 
         // 2. Init Controller & View
         GameController controller = new GameController();
@@ -108,7 +110,7 @@ public class MainApp extends Application {
         controller.setOnAnimationStart(() -> {
             if (gameBoardView != null) {
                 gameBoardView.startAnimationProcessing();
-            }
+            } 
         });
         
         // [LOGIC GAME OVER]
@@ -198,7 +200,10 @@ public class MainApp extends Application {
         Button btnMenu = new Button("MENU");
         btnMenu.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-border-color: gray; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;");
         btnMenu.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        btnMenu.setOnAction(e -> showInGameMenu()); // Trigger PopUp
+        btnMenu.setOnAction(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            showInGameMenu();
+        });
         
         Pane leftSpacer = new Pane();
         javafx.scene.layout.HBox.setHgrow(leftSpacer, javafx.scene.layout.Priority.ALWAYS);

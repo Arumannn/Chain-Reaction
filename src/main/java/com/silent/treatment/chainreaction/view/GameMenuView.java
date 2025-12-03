@@ -1,9 +1,13 @@
 package com.silent.treatment.chainreaction.view;
 
+import com.silent.treatment.chainreaction.core.SoundManager;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -21,7 +25,7 @@ public class GameMenuView extends StackPane {
         // 2. Panel Menu Box
         VBox menuBox = new VBox(20);
         menuBox.setMaxWidth(300);
-        menuBox.setMaxHeight(250);
+        // menuBox.setMaxHeight(250);
         menuBox.setAlignment(Pos.CENTER);
         menuBox.setPadding(new Insets(30));
 
@@ -41,12 +45,48 @@ public class GameMenuView extends StackPane {
         lblTitle.setFont(Font.font("Impact", 40));
         lblTitle.setEffect(new DropShadow(5, Color.CYAN));
 
+                // --- Audio Toggles (Mini) ---
+        HBox audioBox = new HBox(10);
+        audioBox.setAlignment(Pos.CENTER);
+        
+        Button bgmBtn = createMiniToggle("BGM", SoundManager.getInstance().isBgmMuted());
+        bgmBtn.setOnAction(e -> {
+            SoundManager.getInstance().toggleBGM();
+            updateMiniToggleStyle(bgmBtn, SoundManager.getInstance().isBgmMuted());
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+        });
+        
+        Button sfxBtn = createMiniToggle("SFX", SoundManager.getInstance().isSfxMuted());
+        sfxBtn.setOnAction(e -> {
+            SoundManager.getInstance().toggleSFX();
+            updateMiniToggleStyle(sfxBtn, SoundManager.getInstance().isSfxMuted());
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+        });
+        
+        audioBox.getChildren().addAll(bgmBtn, sfxBtn);
+
         // 4. Tombol-tombol
         StackPane btnResume = createStyledButton("RESUME", Color.LIME, onResume);
         StackPane btnExit = createStyledButton("EXIT TO MENU", Color.RED, onExit);
 
-        menuBox.getChildren().addAll(lblTitle, btnResume, btnExit);
+        menuBox.getChildren().addAll(lblTitle, audioBox, btnResume, btnExit);
         this.getChildren().add(menuBox);
+    }
+
+    private Button createMiniToggle(String text, boolean isMuted) {
+        Button btn = new Button(text);
+        btn.setPrefWidth(80);
+        btn.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        updateMiniToggleStyle(btn, isMuted);
+        return btn;
+    }
+
+    private void updateMiniToggleStyle(Button btn, boolean isMuted) {
+        if (isMuted) {
+            btn.setStyle("-fx-background-color: #333; -fx-text-fill: gray; -fx-border-color: gray; -fx-border-radius: 5; -fx-cursor: hand;");
+        } else {
+            btn.setStyle("-fx-background-color: #333; -fx-text-fill: cyan; -fx-border-color: cyan; -fx-border-radius: 5; -fx-cursor: hand;");
+        }
     }
 
     private StackPane createStyledButton(String text, Color color, Runnable action) {
@@ -73,6 +113,11 @@ public class GameMenuView extends StackPane {
         btn.setOnMouseExited(e -> {
             border.setFill(null);
             txt.setFill(color);
+        });
+
+        btn.setOnMouseClicked(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            action.run();
         });
 
         return btn;

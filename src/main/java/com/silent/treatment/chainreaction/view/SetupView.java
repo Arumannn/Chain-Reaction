@@ -257,6 +257,7 @@
 package com.silent.treatment.chainreaction.view;
 
 import com.silent.treatment.chainreaction.model.Player;
+import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.MapType;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
@@ -457,7 +458,11 @@ public class SetupView extends StackPane {
         btn.setStyle(styleNormal);
         btn.setOnMouseEntered(e -> btn.setStyle(styleHover));
         btn.setOnMouseExited(e -> btn.setStyle(styleNormal));
-        btn.setOnAction(e -> action.run());
+
+        btn.setOnAction(e -> {
+            SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
+            action.run();
+        });
 
         return btn;
     }
