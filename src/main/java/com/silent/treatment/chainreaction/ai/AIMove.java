@@ -1,9 +1,9 @@
 package com.silent.treatment.chainreaction.ai;
 
 public class AIMove implements Comparable<AIMove> {
-    public int x;
-    public int y;
-    public double score;
+    private int x;
+    private int y;
+    private double score;
 
     public AIMove(int x, int y, double score) {
         this.x = x;
@@ -13,6 +13,22 @@ public class AIMove implements Comparable<AIMove> {
 
     public AIMove(int x, int y) {
         this(x, y, 0.0);
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public double getScore() {
+        return score;
+    }
+
+    public void setScore(double score) {
+        this.score = score;
     }
 
     @Override

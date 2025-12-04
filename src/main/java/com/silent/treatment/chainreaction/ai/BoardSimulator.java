@@ -6,6 +6,10 @@ import com.silent.treatment.chainreaction.model.Player;
 
 public class BoardSimulator {
 
+    private BoardSimulator() {
+        // Private constructor to prevent instantiation
+    }
+
     public static BoardState cloneBoard(Board board) {
         int width = board.getWidth();
         int height = board.getHeight();
@@ -30,35 +34,38 @@ public class BoardSimulator {
     }
 
     public static BoardState simulateMove(BoardState state, AIMove move, Player player) {
-
         BoardState newState = state.clone();
+        CellState cell = newState.getCell(move.getX(), move.getY());
 
-        CellState cell = newState.getCell(move.x, move.y);
         if (cell != null) {
             cell.owner = player;
             cell.orbs++;
 
             if (cell.orbs >= cell.criticalMass) {
-
-                cell.orbs -= cell.criticalMass;
-
-                int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
-                for (int[] dir : directions) {
-                    int nx = move.x + dir[0];
-                    int ny = move.y + dir[1];
-
-                    if (nx >= 0 && nx < newState.width && ny >= 0 && ny < newState.height) {
-                        CellState neighbor = newState.getCell(nx, ny);
-                        if (neighbor != null) {
-                            neighbor.owner = player;
-                            neighbor.orbs++;
-                        }
-                    }
-                }
+                handleExplosion(newState, cell, move.getX(), move.getY(), player);
             }
         }
 
         return newState;
+    }
+
+    private static void handleExplosion(BoardState state, CellState cell, int x, int y, Player player) {
+        cell.orbs -= cell.criticalMass;
+
+        int[][] directions = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
+        for (int[] dir : directions) {
+            spreadToNeighbor(state, x + dir[0], y + dir[1], player);
+        }
+    }
+
+    private static void spreadToNeighbor(BoardState state, int x, int y, Player player) {
+        if (x >= 0 && x < state.width && y >= 0 && y < state.height) {
+            CellState neighbor = state.getCell(x, y);
+            if (neighbor != null) {
+                neighbor.owner = player;
+                neighbor.orbs++;
+            }
+        }
     }
 
     public static class BoardState {

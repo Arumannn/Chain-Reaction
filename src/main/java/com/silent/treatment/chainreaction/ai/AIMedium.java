@@ -41,16 +41,26 @@ public class AIMedium extends AIBase {
             return null;
         }
 
+        List<Cell> bestCells = findCellsWithMaxOrbs(validMoves, aiPlayer);
+
+        if (!bestCells.isEmpty()) {
+            return bestCells.get(random.nextInt(bestCells.size()));
+        }
+
+        return selectRandomNonNullCell(validMoves);
+    }
+
+    private List<Cell> findCellsWithMaxOrbs(List<Cell> validMoves, Player aiPlayer) {
         List<Cell> bestCells = new ArrayList<>();
         int maxOrbs = -1;
 
         for (Cell cell : validMoves) {
-            if (cell == null)
+            if (cell == null) {
                 continue;
-
-            int orbs = cell.getOrbs();
+            }
 
             if (cell.getOwner() != null && cell.getOwner().equals(aiPlayer)) {
+                int orbs = cell.getOrbs();
                 if (orbs > maxOrbs) {
                     maxOrbs = orbs;
                     bestCells.clear();
@@ -61,14 +71,15 @@ public class AIMedium extends AIBase {
             }
         }
 
-        if (!bestCells.isEmpty()) {
-            return bestCells.get(random.nextInt(bestCells.size()));
-        }
+        return bestCells;
+    }
 
+    private Cell selectRandomNonNullCell(List<Cell> validMoves) {
         List<Cell> nonNullMoves = new ArrayList<>();
         for (Cell c : validMoves) {
-            if (c != null)
+            if (c != null) {
                 nonNullMoves.add(c);
+            }
         }
 
         if (!nonNullMoves.isEmpty()) {

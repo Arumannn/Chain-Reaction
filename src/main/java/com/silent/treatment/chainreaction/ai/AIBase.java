@@ -1,6 +1,7 @@
 package com.silent.treatment.chainreaction.ai;
 
 import com.silent.treatment.chainreaction.core.GameManager;
+import com.silent.treatment.chainreaction.model.Board;
 import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
 
@@ -30,23 +31,40 @@ public abstract class AIBase {
     }
 
     protected Cell findCriticalThreat(Player player, GameManager gm) {
-        for (int x = 0; x < gm.getBoard().getWidth(); x++) {
-            for (int y = 0; y < gm.getBoard().getHeight(); y++) {
-                Cell c = gm.getBoard().getCell(x, y);
-                if (c == null)
+        Board board = gm.getBoard();
+
+        for (int x = 0; x < board.getWidth(); x++) {
+            for (int y = 0; y < board.getHeight(); y++) {
+
+                Cell cell = board.getCell(x, y);
+                if (!isPotentialThreatCell(cell, player))
                     continue;
 
-                if (player.equals(c.getOwner()) &&
-                        c.getOrbs() >= c.getCriticalMass() - 1) {
-                    for (Cell n : c.getNeighbors()) {
-                        if (n.getOwner() == null)
-                            return n;
-                    }
+                Cell emptyNeighbor = findEmptyNeighbor(cell);
+                if (emptyNeighbor != null) {
+                    return emptyNeighbor;
                 }
             }
         }
         return null;
     }
+
+    private boolean isPotentialThreatCell(Cell c, Player p) {
+        if (c == null) return false;
+        if (!p.equals(c.getOwner())) return false;
+
+        return c.getOrbs() >= c.getCriticalMass() - 1;
+    }
+
+    private Cell findEmptyNeighbor(Cell c) {
+        for (Cell n : c.getNeighbors()) {
+            if (n.getOwner() == null) {
+                return n;
+            }
+        }
+        return null;
+    }
+
 
     protected Cell findCornerMove(GameManager gm) {
         int maxX = gm.getBoard().getWidth() - 1;
@@ -60,10 +78,13 @@ public abstract class AIBase {
         };
 
         for (int[] pos : corners) {
-            int x = pos[0], y = pos[1];
+            int x = pos[0];
+            int y = pos[1];
+
             Cell c = gm.getBoard().getCell(x, y);
             if (c == null)
                 continue;
+
             if (c.getOwner() == null)
                 return c;
         }

@@ -22,7 +22,7 @@ public class AITutorial extends AIBase {
         List<AIMove> allMoves = new ArrayList<>();
 
         for (AIMove move : legalMoves) {
-            Cell cell = gm.getBoard().getCell(move.x, move.y);
+            Cell cell = gm.getBoard().getCell(move.getX(), move.getY());
             if (cell == null)
                 continue;
 
@@ -40,6 +40,6 @@ public class AITutorial extends AIBase {
         }
 
         AIMove chosen = chooseFrom.get(random.nextInt(chooseFrom.size()));
-        return gm.getBoard().getCell(chosen.x, chosen.y);
+        return gm.getBoard().getCell(chosen.getX(), chosen.getY());
     }
 }
