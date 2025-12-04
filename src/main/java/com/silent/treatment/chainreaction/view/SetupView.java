@@ -57,7 +57,7 @@ public class SetupView extends StackPane {
 
         // --- 1. Background Animasi (Konsisten dengan Menu) ---
         Pane backgroundLayer = new Pane();
-        backgroundLayer.setStyle("-fx-background-color: #121212;");
+        backgroundLayer.setStyle("-fx-background-color: #0a0a0a;");
         createFloatingAtoms(backgroundLayer);
 
         // --- 2. Panel Utama (Glass Effect) ---
@@ -69,11 +69,12 @@ public class SetupView extends StackPane {
 
         // Styling Panel: Background semi-transparan dengan border tipis
         mainPanel.setStyle(
-                "-fx-background-color: rgba(30, 30, 30, 0.8);" +
-                        "-fx-background-radius: 20;" +
-                        "-fx-border-color: rgba(255, 255, 255, 0.2);" +
-                        "-fx-border-radius: 20;" +
-                        "-fx-border-width: 1;");
+                "-fx-background-color: #1a1a1a;" +
+                        "-fx-background-radius: 0;" +
+                        "-fx-border-color: #444444;" +
+                        "-fx-border-radius: 0;" +
+                        "-fx-border-width: 4;");
+        mainPanel.getStyleClass().add("panel-main");
         // Efek bayangan panel
         mainPanel.setEffect(new DropShadow(20, Color.BLACK));
 
@@ -116,7 +117,7 @@ public class SetupView extends StackPane {
         ScrollPane scrollPane = new ScrollPane(playersContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(300);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: #333333; -fx-border-width: 2; -fx-border-radius: 0;");
         scrollPane.getStylesheets()
                 .add("data:text/css,.scroll-pane > .viewport { -fx-background-color: transparent; }"); // Hack CSS
                                                                                                        // inline
@@ -154,7 +155,8 @@ public class SetupView extends StackPane {
             row.setPadding(new Insets(10));
             // Style tiap baris player
             row.setStyle(
-                    "-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 10;");
+                    "-fx-background-color: #1a1a1a; -fx-background-radius: 0; -fx-border-color: #333333; -fx-border-width: 2; -fx-border-radius: 0;");
+            row.getStyleClass().add("player-row");
 
             Label lbl = new Label("#" + (i + 1));
             lbl.setTextFill(Color.GRAY);
@@ -163,11 +165,11 @@ public class SetupView extends StackPane {
 
             TextField nameField = new TextField("Player " + (i + 1));
             nameField.setPrefWidth(200);
-            nameField.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-background-radius: 5;");
+            nameField.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-background-radius: 0; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
 
             ColorPicker colorPicker = new ColorPicker(defaults[i % defaults.length]);
             colorPicker.setPrefWidth(120);
-            colorPicker.setStyle("-fx-background-color: #333; -fx-text-fill: white;");
+            colorPicker.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
 
             // Auto-detect bot berdasarkan bot count
             int botCount = botCountSpinner.getValue();
@@ -211,7 +213,7 @@ public class SetupView extends StackPane {
         boardSizeCombo.getItems().addAll(MapType.values());
         boardSizeCombo.setValue(MapType.SMALL);
         boardSizeCombo.setPrefWidth(180);
-        boardSizeCombo.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-font-size: 14px;");
+        boardSizeCombo.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-font-size: 14px; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
         return boardSizeCombo;
     }
 
@@ -219,7 +221,7 @@ public class SetupView extends StackPane {
     private Spinner<Integer> createCustomSpinner() {
         playerCountSpinner = new Spinner<>(2, 8, 2);
         playerCountSpinner.setPrefWidth(120);
-        playerCountSpinner.setStyle("-fx-background-color: #333; -fx-body-color: #333; -fx-text-fill: white;");
+        playerCountSpinner.setStyle("-fx-background-color: #0a0a0a; -fx-body-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
         // Update list saat angka berubah
         playerCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
             // Pastikan bot count tidak melebihi total players
@@ -236,7 +238,7 @@ public class SetupView extends StackPane {
         botCountSpinner = new Spinner<>(0, 7, 0);
         botCountSpinner.setEditable(false);
         botCountSpinner.setPrefWidth(120);
-        botCountSpinner.setStyle("-fx-background-color: #333; -fx-text-fill: white;");
+        botCountSpinner.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
 
         // Event: Refresh UI saat bot count berubah
         botCountSpinner.valueProperty().addListener((obs, old, newVal) -> {
@@ -258,7 +260,7 @@ public class SetupView extends StackPane {
         botDifficultyCombo.getItems().addAll(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD);
         botDifficultyCombo.setValue(Difficulty.EASY);
         botDifficultyCombo.setPrefWidth(120);
-        botDifficultyCombo.setStyle("-fx-background-color: #333; -fx-text-fill: white;");
+        botDifficultyCombo.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
         return botDifficultyCombo;
     }
 
@@ -271,10 +273,10 @@ public class SetupView extends StackPane {
 
         String hexColor = toHexString(baseColor);
         String styleNormal = String.format(
-                "-fx-background-color: transparent; -fx-text-fill: %s; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 20; -fx-cursor: hand;",
+                "-fx-background-color: transparent; -fx-text-fill: %s; -fx-border-color: %s; -fx-border-width: 3; -fx-border-radius: 0; -fx-cursor: hand;",
                 hexColor, hexColor);
         String styleHover = String.format(
-                "-fx-background-color: %s; -fx-text-fill: black; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 20; -fx-cursor: hand;",
+                "-fx-background-color: %s; -fx-text-fill: black; -fx-border-color: %s; -fx-border-width: 3; -fx-border-radius: 0; -fx-cursor: hand;",
                 hexColor, hexColor);
 
         btn.setStyle(styleNormal);

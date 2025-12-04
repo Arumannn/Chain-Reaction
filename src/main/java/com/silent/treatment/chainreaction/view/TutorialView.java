@@ -40,11 +40,12 @@ public class TutorialView extends BorderPane {
         instructionLabel.setPrefWidth(320);
         instructionLabel.setPadding(new Insets(20));
         instructionLabel.setStyle(
-                "-fx-background-color: rgba(30, 30, 30, 0.9);" +
-                        "-fx-background-radius: 15;" +
-                        "-fx-border-color: cyan;" +
-                        "-fx-border-radius: 15;" +
-                        "-fx-effect: dropshadow(three-pass-box, rgba(0, 255, 255, 0.3), 10, 0, 0, 0);");
+                "-fx-background-color: #1a1a1a;" +
+                        "-fx-background-radius: 0;" +
+                        "-fx-border-color: #00ffff;" +
+                        "-fx-border-width: 4;" +
+                        "-fx-border-radius: 0;");
+        instructionLabel.getStyleClass().add("panel-secondary");
 
         // 3. Setup Controller
         TutorialController tutorialController = new TutorialController(
@@ -66,7 +67,7 @@ public class TutorialView extends BorderPane {
         tutorialController.setOnAnimationStart(gameBoardView::startAnimationProcessing);
 
         // 5. Layout
-        this.setStyle("-fx-background-color: #121212;");
+        this.setStyle("-fx-background-color: #0a0a0a;");
 
         // Header
         Label lblTitle = new Label("HOW TO PLAY");
@@ -95,8 +96,9 @@ public class TutorialView extends BorderPane {
         javafx.scene.shape.Rectangle border = new javafx.scene.shape.Rectangle(80, 30);
         border.setFill(null);
         border.setStroke(color);
-        border.setArcWidth(10);
-        border.setArcHeight(10);
+        border.setStrokeWidth(3);
+        border.setArcWidth(0);
+        border.setArcHeight(0);
         StackPane btn = new StackPane(border, txt);
         btn.setOnMouseClicked(e -> {
             SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);

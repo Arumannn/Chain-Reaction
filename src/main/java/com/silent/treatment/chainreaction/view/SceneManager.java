@@ -46,7 +46,9 @@ public class SceneManager {
             null
         );
         // Casting (Parent) untuk menghindari error compiler di VS Code
-        stage.setScene(new Scene((Parent) menuView, 450, 700));
+        Scene scene = new Scene((Parent) menuView, 450, 700);
+        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
+        stage.setScene(scene);
         stage.centerOnScreen();
     }
 
@@ -55,13 +57,17 @@ public class SceneManager {
             this::startGame,
             this::showMainMenu
         );
-        stage.setScene(new Scene((Parent) setupView, 500, 600));
+        Scene scene = new Scene((Parent) setupView, 500, 600);
+        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
+        stage.setScene(scene);
         stage.centerOnScreen();
     }
 
     public void showTutorial() {
         TutorialView tutorialView = new TutorialView(this::showMainMenu);
-        stage.setScene(new Scene((Parent) tutorialView, 700, 600));
+        Scene scene = new Scene((Parent) tutorialView, 700, 600);
+        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
+        stage.setScene(scene);
         stage.centerOnScreen();
     }
 
@@ -107,7 +113,9 @@ public class SceneManager {
         double winWidth = Math.max(800, (config.mapType.getWidth() * 60) + 350);
         double winHeight = Math.max(600, (config.mapType.getHeight() * 60) + 150);
         
-        stage.setScene(new Scene(globalGameRoot, winWidth, winHeight));
+        Scene scene = new Scene(globalGameRoot, winWidth, winHeight);
+        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
+        stage.setScene(scene);
         stage.centerOnScreen();
     }
 

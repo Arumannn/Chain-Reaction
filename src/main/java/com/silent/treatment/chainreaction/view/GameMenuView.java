@@ -31,13 +31,13 @@ public class GameMenuView extends StackPane {
 
         // Styling Panel (Neon Border)
         menuBox.setStyle(
-                "-fx-background-color: #1e1e1e;" +
-                "-fx-border-color: cyan;" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 15;" +
-                "-fx-background-radius: 15;" +
-                "-fx-effect: dropshadow(three-pass-box, cyan, 15, 0, 0, 0);"
+                "-fx-background-color: #1a1a1a;" +
+                "-fx-border-color: #00ffff;" +
+                "-fx-border-width: 4;" +
+                "-fx-border-radius: 0;" +
+                "-fx-background-radius: 0;"
         );
+        menuBox.getStyleClass().add("dialog-panel");
 
         // 3. Header "MENU"
         Label lblTitle = new Label("PAUSED");
@@ -83,9 +83,11 @@ public class GameMenuView extends StackPane {
 
     private void updateMiniToggleStyle(Button btn, boolean isMuted) {
         if (isMuted) {
-            btn.setStyle("-fx-background-color: #333; -fx-text-fill: gray; -fx-border-color: gray; -fx-border-radius: 5; -fx-cursor: hand;");
+            btn.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #888888; -fx-border-color: #888888; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+            btn.getStyleClass().add("off-state");
         } else {
-            btn.setStyle("-fx-background-color: #333; -fx-text-fill: cyan; -fx-border-color: cyan; -fx-border-radius: 5; -fx-cursor: hand;");
+            btn.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #00ffff; -fx-border-color: #00ffff; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+            btn.getStyleClass().add("on-state");
         }
     }
 
@@ -97,9 +99,9 @@ public class GameMenuView extends StackPane {
         Rectangle border = new Rectangle(200, 45);
         border.setFill(null);
         border.setStroke(color);
-        border.setStrokeWidth(2);
-        border.setArcWidth(10);
-        border.setArcHeight(10);
+        border.setStrokeWidth(3);
+        border.setArcWidth(0);
+        border.setArcHeight(0);
 
         StackPane btn = new StackPane(border, txt);
         btn.setOnMouseClicked(e -> action.run());
