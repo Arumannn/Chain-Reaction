@@ -31,10 +31,6 @@ public class AIHard extends AIBase {
             return null;
         }
 
-        System.out.println("\n[AI HARD] Advanced planning (Depth 3)");
-        System.out.println("  Evaluating " + validMoves.size() + " moves...");
-        System.out.println("  Strategy: Deep simulation with strategic planning");
-
         Cell bestMove = minimaxEngine.findBestMove(gm, aiPlayer, validMoves);
 
         if (bestMove != null) {
@@ -49,24 +45,25 @@ public class AIHard extends AIBase {
             return null;
         }
 
+        List<Cell> bestCells = findBestScoredCells(validMoves, aiPlayer);
+
+        if (!bestCells.isEmpty()) {
+            return bestCells.get(random.nextInt(bestCells.size()));
+        }
+
+        return selectRandomNonNullCell(validMoves);
+    }
+
+    private List<Cell> findBestScoredCells(List<Cell> validMoves, Player aiPlayer) {
         List<Cell> bestCells = new ArrayList<>();
         int maxScore = Integer.MIN_VALUE;
 
         for (Cell cell : validMoves) {
-            if (cell == null)
+            if (cell == null) {
                 continue;
-
-            int score = 0;
-            int orbs = cell.getOrbs();
-            int criticalMass = cell.getCriticalMass();
-            if (cell.getOwner() != null && cell.getOwner().equals(aiPlayer)) {
-                score += (orbs * 10);
-                if (orbs == criticalMass - 1) {
-                    score += 50;
-                }
-            } else if (cell.getOwner() == null) {
-                score += (4 - criticalMass) * 5;
             }
+
+            int score = calculateCellScore(cell, aiPlayer);
 
             if (score > maxScore) {
                 maxScore = score;
@@ -76,14 +73,32 @@ public class AIHard extends AIBase {
                 bestCells.add(cell);
             }
         }
-        if (!bestCells.isEmpty()) {
-            return bestCells.get(random.nextInt(bestCells.size()));
+        return bestCells;
+    }
+
+    private int calculateCellScore(Cell cell, Player aiPlayer) {
+        int score = 0;
+        int orbs = cell.getOrbs();
+        int criticalMass = cell.getCriticalMass();
+
+        if (cell.getOwner() != null && cell.getOwner().equals(aiPlayer)) {
+            score += (orbs * 10);
+            if (orbs == criticalMass - 1) {
+                score += 50;
+            }
+        } else if (cell.getOwner() == null) {
+            score += (4 - criticalMass) * 5;
         }
 
+        return score;
+    }
+
+    private Cell selectRandomNonNullCell(List<Cell> validMoves) {
         List<Cell> nonNullMoves = new ArrayList<>();
         for (Cell c : validMoves) {
-            if (c != null)
+            if (c != null) {
                 nonNullMoves.add(c);
+            }
         }
 
         if (!nonNullMoves.isEmpty()) {

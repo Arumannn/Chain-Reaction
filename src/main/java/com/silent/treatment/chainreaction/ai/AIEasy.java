@@ -48,6 +48,18 @@ public class AIEasy extends AIBase {
         List<Cell> emptyCells = new ArrayList<>();
         List<Cell> ownCells = new ArrayList<>();
 
+        collectCells(gm, aiPlayer, emptyCells, ownCells);
+
+        // Prioritas: empty cells dulu
+        if (!emptyCells.isEmpty()) {
+            return emptyCells.get(random.nextInt(emptyCells.size()));
+        }
+
+        // Kalau tidak ada empty, pilih cell sendiri dengan orbs terbanyak
+        return findBestOwnedCell(ownCells);
+    }
+
+    private void collectCells(GameManager gm, Player aiPlayer, List<Cell> emptyCells, List<Cell> ownCells) {
         for (int x = 0; x < gm.getBoard().getWidth(); x++) {
             for (int y = 0; y < gm.getBoard().getHeight(); y++) {
                 Cell c = gm.getBoard().getCell(x, y);
@@ -61,23 +73,19 @@ public class AIEasy extends AIBase {
                 }
             }
         }
+    }
 
-        // Prioritas: empty cells dulu
-        if (!emptyCells.isEmpty()) {
-            return emptyCells.get(random.nextInt(emptyCells.size()));
+    private Cell findBestOwnedCell(List<Cell> ownCells) {
+        if (ownCells.isEmpty()) {
+            return null;
         }
 
-        // Kalau tidak ada empty, pilih cell sendiri dengan orbs terbanyak
-        if (!ownCells.isEmpty()) {
-            Cell bestOwn = ownCells.get(0);
-            for (Cell c : ownCells) {
-                if (c.getOrbs() > bestOwn.getOrbs()) {
-                    bestOwn = c;
-                }
+        Cell bestOwn = ownCells.get(0);
+        for (Cell c : ownCells) {
+            if (c.getOrbs() > bestOwn.getOrbs()) {
+                bestOwn = c;
             }
-            return bestOwn;
         }
-
-        return null;
+        return bestOwn;
     }
 }

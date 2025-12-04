@@ -333,7 +333,7 @@ public class MinimaxEngine {
     }
 
     private double evaluateMoveWithMultipleEnemies(Board board, AIMove move, Player ai, List<Player> enemies) {
-        Cell cell = board.getCell(move.x, move.y);
+        Cell cell = board.getCell(move.getX(), move.getY());
 
         if (cell == null)
             return Double.NEGATIVE_INFINITY;
@@ -373,7 +373,7 @@ public class MinimaxEngine {
 
     private double evaluateMovePotential(Board board, AIMove move, Player ai, Player enemy) {
 
-        Cell cell = board.getCell(move.x, move.y);
+        Cell cell = board.getCell(move.getX(), move.getY());
 
         if (cell == null)
             return Double.NEGATIVE_INFINITY;
