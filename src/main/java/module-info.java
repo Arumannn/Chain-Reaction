@@ -4,6 +4,7 @@ module com.silent.treatment.chainreaction {
     requires javafx.web;
     requires javafx.media;
     requires transitive javafx.graphics;
+    requires java.logging;
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;

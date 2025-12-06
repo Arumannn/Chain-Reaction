@@ -8,6 +8,10 @@ import java.util.List;
 
 public class MoveGenerator {
 
+    private MoveGenerator() {
+        // Private constructor to prevent instantiation
+    }
+
     public static List<AIMove> getLegalMoves(Board board, Player player) {
         List<AIMove> moves = new ArrayList<>();
 

@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cell {
-    private final int x, y;
+    private final int x;
+    private final int y;
     private int currentOrbs;
     private int criticalMass;
     private Player owner;
@@ -40,6 +41,7 @@ public class Cell {
     // FR-2.1 & FR-2.2: Tambah Orb & Cek Ledakan
     public void addOrb(Player player, Board board) {
         this.owner = player; // Update Owner
+        player.setHasPlayed(true); // Player sudah melakukan aksi, valid untuk eliminasi
         this.currentOrbs++;
 
         SoundManager.getInstance().playSFX(SoundManager.SFX_POP);
@@ -51,18 +53,20 @@ public class Cell {
             explosionStrategy.explode(this, board, player);
         }
     }
-    
+
     /**
      * Menambahkan multiple orbs sekaligus.
-     * Digunakan untuk batch processing ketika multiple explosions menargetkan cell yang sama.
+     * Digunakan untuk batch processing ketika multiple explosions menargetkan cell
+     * yang sama.
      * 
-     * @param count Jumlah orb yang akan ditambahkan
+     * @param count  Jumlah orb yang akan ditambahkan
      * @param player Player pemilik orb
-     * @param board Board reference
+     * @param board  Board reference
      */
     public void addOrbs(int count, Player player, Board board) {
-        if (count <= 0) return;
-        
+        if (count <= 0)
+            return;
+
         this.owner = player; // Update Owner
         this.currentOrbs += count;
 
@@ -77,23 +81,44 @@ public class Cell {
     // Setter Getter
     public void setOrbs(int orbs) {
         this.currentOrbs = orbs;
-        if (currentOrbs == 0) this.owner = null; // Reset owner jika kosong (opsional)
+        if (currentOrbs == 0)
+            this.owner = null; // Reset owner jika kosong (opsional)
         notifyObservers();
     }
 
-    public int getOrbs() { return currentOrbs; }
-    public int getCriticalMass() { return criticalMass; }
-    public Player getOwner() { return owner; }
-    public List<Cell> getNeighbors() { return neighbors; }
-    public int getX() { return x; }
-    public int getY() { return y; }
-    
+    public int getOrbs() {
+        return currentOrbs;
+    }
+
+    public int getCriticalMass() {
+        return criticalMass;
+    }
+
+    public Player getOwner() {
+        return owner;
+    }
+
+    public List<Cell> getNeighbors() {
+        return neighbors;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
     public void setExplosionStrategy(ExplosionStrategy strategy) {
         this.explosionStrategy = strategy;
     }
 
     // Observer Methods
-    public void attach(GameObserver observer) { observers.add(observer); }
+    public void attach(GameObserver observer) {
+        observers.add(observer);
+    }
+
     public void notifyObservers() {
         for (GameObserver observer : observers) {
             observer.update(this);

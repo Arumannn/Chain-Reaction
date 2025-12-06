@@ -10,9 +10,11 @@ import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.view.DifficultySelectionView.Difficulty;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
+import java.util.logging.Logger;
 
 public class AIController {
 
+    private static final Logger logger = Logger.getLogger(AIController.class.getName());
     private final GameController gameController;
     private final Difficulty difficulty;
 
@@ -36,7 +38,7 @@ public class AIController {
     public void performMove() {
 
         if (isExecuting) {
-            System.out.println("AI already executing, skipping...");
+            logger.info("AI already executing, skipping...");
             return;
         }
 
@@ -64,7 +66,7 @@ public class AIController {
             GameManager gm = GameManager.getInstance();
 
             if (gm.getPlayers() == null || gm.getPlayers().isEmpty()) {
-                System.out.println("[AI] Game reset detected. Cancelling move.");
+                logger.info("[AI] Game reset detected. Cancelling move.");
                 return;
             }
 
@@ -95,7 +97,7 @@ public class AIController {
                 // Gunakan jalur khusus AI agar tetap bisa bermain meskipun human sudah kalah
                 gameController.handleAICellClick(targetCell);
             } else {
-                System.err.println("AI Warning: No valid move found for " + aiPlayer.getName());
+                logger.warning(() -> "AI Warning: No valid move found for " + aiPlayer.getName());
 
                 gm.nextTurn();
                 if (gameController.onTurnChanged != null) {

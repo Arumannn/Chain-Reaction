@@ -11,12 +11,13 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         // Delegasikan semua logika ke SceneManager
         SceneManager.getInstance().setStage(stage);
-        
+
         // Panggil Menu Utama
         SceneManager.getInstance().showMainMenu();
         SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
-        
+
         stage.setTitle("Silent Treatment - Chain Reaction");
+        stage.setMaximized(true);
         stage.show();
     }
 

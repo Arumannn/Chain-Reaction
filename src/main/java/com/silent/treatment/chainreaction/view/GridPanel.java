@@ -34,16 +34,13 @@ public class GridPanel extends StackPane {
     private Pane animationLayer; // Layer untuk animasi orb movement
     private AnimationManager animationManager;
     private Map<Cell, Node> cellViewMap; // Mapping Cell ke CellView
-    /**
-     * Flag untuk mengunci input pemain saat giliran bot.
-     * Hanya klik pemain yang akan diblokir – AI tetap memanggil GameController langsung.
-     */
+    @SuppressWarnings("java:S1450") // Field is read in inner class CellView
     private boolean playerInputEnabled = true;
 
     public GridPanel(Board board, GameController controller) {
         this.controller = controller;
         this.cellViewMap = new HashMap<>();
-        
+
         // Setup animated explosion strategy untuk semua cells
         setupAnimatedStrategy(board);
 
@@ -52,30 +49,26 @@ public class GridPanel extends StackPane {
         gridPane.setAlignment(Pos.CENTER);
         gridPane.setHgap(5);
         gridPane.setVgap(5);
-        
+
         // Buat animation layer (transparent overlay)
         animationLayer = new Pane();
         animationLayer.setMouseTransparent(true); // Tidak menghalangi klik
-        
+
         // Tambahkan ke StackPane
         this.getChildren().addAll(gridPane, animationLayer);
-        
+
         setBackgroundTheme(Color.valueOf("#222222"));
 
         initializeUI(board);
-        
+
         // Setup AnimationManager
         animationManager = new AnimationManager(animationLayer, cellViewMap);
     }
 
-    /**
-     * Mengatur apakah pemain (mouse) boleh berinteraksi dengan grid.
-     * Digunakan untuk mengunci input saat giliran bot.
-     */
     public void setPlayerInteractionEnabled(boolean enabled) {
         this.playerInputEnabled = enabled;
     }
-    
+
     /**
      * Setup AnimatedExplosionStrategy untuk semua cells di board.
      */
@@ -93,10 +86,9 @@ public class GridPanel extends StackPane {
 
     public void setBackgroundTheme(Color playerColor) {
         String rgba = String.format("rgba(%d, %d, %d, 0.15)",
-                (int)(playerColor.getRed() * 255),
-                (int)(playerColor.getGreen() * 255),
-                (int)(playerColor.getBlue() * 255)
-        );
+                (int) (playerColor.getRed() * 255),
+                (int) (playerColor.getGreen() * 255),
+                (int) (playerColor.getBlue() * 255));
 
         gridPane.setStyle(
                 "-fx-background-color: " + rgba + ";" +
@@ -104,8 +96,7 @@ public class GridPanel extends StackPane {
                         "-fx-background-radius: 0;" +
                         "-fx-border-color: #333333;" +
                         "-fx-border-radius: 0;" +
-                        "-fx-border-width: 4;"
-        );
+                        "-fx-border-width: 4;");
         gridPane.getStyleClass().add("grid-pane");
     }
 
@@ -117,14 +108,14 @@ public class GridPanel extends StackPane {
                     CellView cellView = new CellView(cell);
                     gridPane.add(cellView, i, j);
                     cellViewMap.put(cell, cellView); // Store mapping untuk animasi
-                    
+
                     // Store cell reference in userData for debug
                     cellView.setUserData(cell);
                 }
             }
         }
     }
-    
+
     /**
      * Memulai proses animasi explosions.
      * Dipanggil setelah user action atau explosion trigger.
@@ -134,7 +125,7 @@ public class GridPanel extends StackPane {
             animationManager.startProcessing();
         }
     }
-    
+
     /**
      * Membersihkan semua animasi (untuk reset game).
      */
@@ -153,19 +144,21 @@ public class GridPanel extends StackPane {
         private List<Circle> balls; // List untuk menyimpan semua bola
         private DropShadow glowEffect;
         private Timeline currentAnimation; // Untuk tracking animasi yang sedang berjalan
-        
+
+        private static final String CSS_CLASS_CRITICAL = "critical";
+
         // Enum untuk tipe cell
         private enum CellType {
-            CORNER,    // Sudut (2 tetangga)
-            EDGE,      // Sisi (3 tetangga)
-            CENTER     // Tengah (4 tetangga)
+            CORNER, // Sudut (2 tetangga)
+            EDGE, // Sisi (3 tetangga)
+            CENTER // Tengah (4 tetangga)
         }
 
         public CellView(Cell cell) {
             this.cell = cell;
             this.cell.attach(this);
             this.balls = new ArrayList<>();
-            
+
             // Set userData untuk coordinate cache lookup
             this.setUserData(cell);
 
@@ -189,12 +182,16 @@ public class GridPanel extends StackPane {
             this.getChildren().addAll(border, ballContainer);
 
             this.setOnMouseEntered(e -> {
-                if (!playerInputEnabled) return;
-                if(cell.getOwner() == null) border.setFill(Color.valueOf("#2a2a2a"));
+                if (!playerInputEnabled)
+                    return;
+                if (cell.getOwner() == null)
+                    border.setFill(Color.valueOf("#2a2a2a"));
             });
             this.setOnMouseExited(e -> {
-                if (!playerInputEnabled) return;
-                if(cell.getOwner() == null) border.setFill(Color.valueOf("#1a1a1a"));
+                if (!playerInputEnabled)
+                    return;
+                if (cell.getOwner() == null)
+                    border.setFill(Color.valueOf("#1a1a1a"));
             });
 
             this.setOnMouseClicked(e -> {
@@ -221,10 +218,14 @@ public class GridPanel extends StackPane {
         private CellType getCellType() {
             int neighbors = cell.getNeighbors().size();
             switch (neighbors) {
-                case 2: return CellType.CORNER;
-                case 3: return CellType.EDGE;
-                case 4: return CellType.CENTER;
-                default: return CellType.CENTER;
+                case 2:
+                    return CellType.CORNER;
+                case 3:
+                    return CellType.EDGE;
+                case 4:
+                    return CellType.CENTER;
+                default:
+                    return CellType.CENTER;
             }
         }
 
@@ -236,7 +237,7 @@ public class GridPanel extends StackPane {
             ball.setFill(color);
             ball.setStroke(Color.BLACK);
             ball.setStrokeWidth(2);
-            
+
             // Hard pixel shadow instead of glow
             DropShadow ballShadow = new DropShadow();
             ballShadow.setRadius(4);
@@ -246,7 +247,7 @@ public class GridPanel extends StackPane {
             ballShadow.setOffsetY(2);
             ball.setEffect(ballShadow);
             ball.getStyleClass().add("circle");
-            
+
             return ball;
         }
 
@@ -259,18 +260,18 @@ public class GridPanel extends StackPane {
             // Jika bounds belum tersedia, gunakan default 55x55
             double width = this.getWidth() > 0 ? this.getWidth() : 55.0;
             double height = this.getHeight() > 0 ? this.getHeight() : 55.0;
-            
+
             // Posisi center dari container
             double centerX = width / 2.0;
             double centerY = height / 2.0;
-            
+
             switch (count) {
                 case 1:
                     // Satu bola di tengah
                     balls.get(0).setLayoutX(centerX);
                     balls.get(0).setLayoutY(centerY);
                     break;
-                    
+
                 case 2:
                     // Dua bola berdampingan horizontal
                     balls.get(0).setLayoutX(centerX - 8);
@@ -278,7 +279,7 @@ public class GridPanel extends StackPane {
                     balls.get(1).setLayoutX(centerX + 8);
                     balls.get(1).setLayoutY(centerY);
                     break;
-                    
+
                 case 3:
                     // Tiga bola membentuk segitiga
                     balls.get(0).setLayoutX(centerX);
@@ -288,7 +289,7 @@ public class GridPanel extends StackPane {
                     balls.get(2).setLayoutX(centerX + 8);
                     balls.get(2).setLayoutY(centerY + 6);
                     break;
-                    
+
                 case 4:
                     // Empat bola membentuk kotak (state kritis sebelum meledak)
                     balls.get(0).setLayoutX(centerX - 7);
@@ -300,6 +301,13 @@ public class GridPanel extends StackPane {
                     balls.get(3).setLayoutX(centerX + 7);
                     balls.get(3).setLayoutY(centerY + 7);
                     break;
+                default:
+                    // For any unexpected count, center position
+                    if (!balls.isEmpty()) {
+                        balls.get(0).setLayoutX(centerX);
+                        balls.get(0).setLayoutY(centerY);
+                    }
+                    break;
             }
         }
 
@@ -307,30 +315,30 @@ public class GridPanel extends StackPane {
          * Membuat animasi shake untuk corner cells dengan 1 bola
          */
         private Timeline createShakeAnimation() {
-            if (balls.isEmpty()) return null;
-            
+            if (balls.isEmpty())
+                return null;
+
             Circle ball = balls.get(0);
             double originalX = ball.getLayoutX();
             double originalY = ball.getLayoutY();
-            
+
             Timeline timeline = new Timeline(
-                new KeyFrame(Duration.ZERO,
-                    new KeyValue(ball.layoutXProperty(), originalX),
-                    new KeyValue(ball.layoutYProperty(), originalY)),
-                new KeyFrame(Duration.millis(50),
-                    new KeyValue(ball.layoutXProperty(), originalX + 3),
-                    new KeyValue(ball.layoutYProperty(), originalY + 2)),
-                new KeyFrame(Duration.millis(100),
-                    new KeyValue(ball.layoutXProperty(), originalX - 3),
-                    new KeyValue(ball.layoutYProperty(), originalY - 2)),
-                new KeyFrame(Duration.millis(150),
-                    new KeyValue(ball.layoutXProperty(), originalX + 2),
-                    new KeyValue(ball.layoutYProperty(), originalY + 3)),
-                new KeyFrame(Duration.millis(200),
-                    new KeyValue(ball.layoutXProperty(), originalX),
-                    new KeyValue(ball.layoutYProperty(), originalY))
-            );
-            
+                    new KeyFrame(Duration.ZERO,
+                            new KeyValue(ball.layoutXProperty(), originalX),
+                            new KeyValue(ball.layoutYProperty(), originalY)),
+                    new KeyFrame(Duration.millis(50),
+                            new KeyValue(ball.layoutXProperty(), originalX + 3),
+                            new KeyValue(ball.layoutYProperty(), originalY + 2)),
+                    new KeyFrame(Duration.millis(100),
+                            new KeyValue(ball.layoutXProperty(), originalX - 3),
+                            new KeyValue(ball.layoutYProperty(), originalY - 2)),
+                    new KeyFrame(Duration.millis(150),
+                            new KeyValue(ball.layoutXProperty(), originalX + 2),
+                            new KeyValue(ball.layoutYProperty(), originalY + 3)),
+                    new KeyFrame(Duration.millis(200),
+                            new KeyValue(ball.layoutXProperty(), originalX),
+                            new KeyValue(ball.layoutYProperty(), originalY)));
+
             timeline.setCycleCount(Timeline.INDEFINITE);
             return timeline;
         }
@@ -340,11 +348,11 @@ public class GridPanel extends StackPane {
          */
         private Timeline createRotateAnimation() {
             Timeline timeline = new Timeline();
-            
+
             // Pusat rotasi
             double centerX = 27.5;
             double centerY = 27.5;
-            
+
             // Untuk setiap bola, buat animasi rotasi memutar center
             for (Circle ball : balls) {
                 // Hitung posisi awal relatif terhadap center
@@ -352,22 +360,21 @@ public class GridPanel extends StackPane {
                 double startY = ball.getLayoutY();
                 double radius = Math.sqrt(Math.pow(startX - centerX, 2) + Math.pow(startY - centerY, 2));
                 double startAngle = Math.atan2(startY - centerY, startX - centerX);
-                
+
                 // Buat 360 derajat rotasi dalam 1 detik
                 for (int i = 0; i <= 36; i++) {
                     double angle = startAngle + (i * Math.PI / 18); // 10 derajat per frame
                     double newX = centerX + radius * Math.cos(angle);
                     double newY = centerY + radius * Math.sin(angle);
-                    
+
                     KeyFrame kf = new KeyFrame(
-                        Duration.millis(i * 28), // 28ms * 36 = ~1 detik
-                        new KeyValue(ball.layoutXProperty(), newX, Interpolator.LINEAR),
-                        new KeyValue(ball.layoutYProperty(), newY, Interpolator.LINEAR)
-                    );
+                            Duration.millis(i * 28), // 28ms * 36 = ~1 detik
+                            new KeyValue(ball.layoutXProperty(), newX, Interpolator.LINEAR),
+                            new KeyValue(ball.layoutYProperty(), newY, Interpolator.LINEAR));
                     timeline.getKeyFrames().add(kf);
                 }
             }
-            
+
             timeline.setCycleCount(Timeline.INDEFINITE);
             return timeline;
         }
@@ -381,9 +388,9 @@ public class GridPanel extends StackPane {
                 currentAnimation.stop();
                 currentAnimation = null;
             }
-            
+
             CellType type = getCellType();
-            
+
             // Tentukan animasi berdasarkan tipe dan jumlah bola
             if (type == CellType.CORNER && count == 1) {
                 // Corner dengan 1 bola: shake
@@ -395,7 +402,7 @@ public class GridPanel extends StackPane {
                 // Center dengan 2-3 bola: rotate
                 currentAnimation = createRotateAnimation();
             }
-            
+
             // Jalankan animasi jika ada
             if (currentAnimation != null) {
                 currentAnimation.play();
@@ -404,72 +411,75 @@ public class GridPanel extends StackPane {
 
         @Override
         public void update(Cell cell) {
-            // Pastikan update dilakukan di JavaFX Application Thread
-            // Ini memastikan UI update terjadi setelah semua logic selesai
             javafx.application.Platform.runLater(() -> {
                 int count = cell.getOrbs();
-                
+
                 if (count > 0 && cell.getOwner() != null) {
-                    Color pColor = cell.getOwner().getColor();
-
-                    border.setStroke(pColor);
-                    border.setStrokeWidth(3);
-                    this.getStyleClass().add("owned");
-
-                    // Update jumlah bola
-                    ballContainer.getChildren().clear();
-                    balls.clear();
-                    
-                    for (int i = 0; i < count; i++) {
-                        Circle ball = createBall(pColor);
-                        balls.add(ball);
-                        ballContainer.getChildren().add(ball);
-                    }
-                    
-                    // Pastikan CellView sudah di-layout sebelum positioning
-                    // Request layout pass untuk memastikan bounds sudah stabil
-                    if (this.getParent() != null) {
-                        this.requestLayout();
-                    }
-                    
-                    // Atur posisi bola-bola
-                    // Koordinat 27.5, 27.5 adalah center dari CellView (55x55)
-                    // Ini adalah koordinat lokal yang selalu konsisten
-                    positionBalls(count);
-                    
-                    // Jika sudah kritis (siap meledak), beri indikasi visual
-                    if (count >= cell.getCriticalMass()) {
-                        // Tambahkan outline putih pada semua bola dan cell
-                        for (Circle ball : balls) {
-                            ball.setStroke(Color.WHITE);
-                            ball.setStrokeWidth(3);
-                            ball.getStyleClass().add("critical");
-                        }
-                        this.getStyleClass().add("critical");
-                        border.setStroke(Color.valueOf("#ff0000"));
-                        border.setStrokeWidth(4);
-                    } else {
-                        this.getStyleClass().remove("critical");
-                    }
-                    
-                    // Mulai animasi yang sesuai
-                    startAppropriateAnimation(count);
-                    
+                    updateCellWithOrbs(cell, count);
                 } else {
-                    border.setStroke(Color.valueOf("#444444"));
-                    border.setStrokeWidth(3);
-                    this.getStyleClass().remove("owned");
-                    this.getStyleClass().remove("critical");
-                    ballContainer.getChildren().clear();
-                    balls.clear();
-                    
-                    // Stop animasi
-                    if (currentAnimation != null) {
-                        currentAnimation.stop();
-                        currentAnimation = null;
-                    }
+                    resetCellToEmpty();
                 }
             });
+        }
+
+        private void updateCellWithOrbs(Cell cell, int count) {
+            Color pColor = cell.getOwner().getColor();
+
+            border.setStroke(pColor);
+            border.setStrokeWidth(3);
+            this.getStyleClass().add("owned");
+
+            updateBalls(count, pColor);
+
+            if (this.getParent() != null) {
+                this.requestLayout();
+            }
+
+            positionBalls(count);
+
+            if (count >= cell.getCriticalMass()) {
+                applyCriticalStyling();
+            } else {
+                this.getStyleClass().remove(CSS_CLASS_CRITICAL);
+            }
+
+            startAppropriateAnimation(count);
+        }
+
+        private void updateBalls(int count, Color pColor) {
+            ballContainer.getChildren().clear();
+            balls.clear();
+
+            for (int i = 0; i < count; i++) {
+                Circle ball = createBall(pColor);
+                balls.add(ball);
+                ballContainer.getChildren().add(ball);
+            }
+        }
+
+        private void applyCriticalStyling() {
+            for (Circle ball : balls) {
+                ball.setStroke(Color.WHITE);
+                ball.setStrokeWidth(3);
+                ball.getStyleClass().add(CSS_CLASS_CRITICAL);
+            }
+            this.getStyleClass().add(CSS_CLASS_CRITICAL);
+            border.setStroke(Color.valueOf("#ff0000"));
+            border.setStrokeWidth(4);
+        }
+
+        private void resetCellToEmpty() {
+            border.setStroke(Color.valueOf("#444444"));
+            border.setStrokeWidth(3);
+            this.getStyleClass().remove("owned");
+            this.getStyleClass().remove(CSS_CLASS_CRITICAL);
+            ballContainer.getChildren().clear();
+            balls.clear();
+
+            if (currentAnimation != null) {
+                currentAnimation.stop();
+                currentAnimation = null;
+            }
         }
     }
 }

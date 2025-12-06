@@ -10,27 +10,19 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import javafx.animation.AnimationTimer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 public class SettingsView extends StackPane {
 
-    private final Runnable onBack;
-
     public SettingsView(Runnable onBack) {
-        this.onBack = onBack;
 
         // Background
         Pane backgroundLayer = new Pane();
         backgroundLayer.setStyle("-fx-background-color: #0a0a0a;");
-        createFloatingAtoms(backgroundLayer);
+        ParticleBackground.attachTo(backgroundLayer);
         this.getChildren().add(backgroundLayer);
 
         // Main Panel
@@ -40,11 +32,10 @@ public class SettingsView extends StackPane {
         mainPanel.setAlignment(Pos.CENTER);
         mainPanel.setStyle(
                 "-fx-background-color: #1a1a1a;" +
-                "-fx-background-radius: 0;" +
-                "-fx-border-color: #444444;" +
-                "-fx-border-radius: 0;" +
-                "-fx-border-width: 4;"
-        );
+                        "-fx-background-radius: 0;" +
+                        "-fx-border-color: #444444;" +
+                        "-fx-border-radius: 0;" +
+                        "-fx-border-width: 4;");
         mainPanel.getStyleClass().add("panel-main");
         mainPanel.setEffect(new DropShadow(20, Color.BLACK));
 
@@ -59,14 +50,12 @@ public class SettingsView extends StackPane {
         audioBox.setAlignment(Pos.CENTER);
 
         // BGM Toggle
-        HBox bgmRow = createToggleRow("Background Music", SoundManager.getInstance().isBgmMuted(), () -> {
-            SoundManager.getInstance().toggleBGM();
-        });
+        HBox bgmRow = createToggleRow("Background Music", SoundManager.getInstance().isBgmMuted(),
+                () -> SoundManager.getInstance().toggleBGM());
 
         // SFX Toggle
-        HBox sfxRow = createToggleRow("Sound Effects", SoundManager.getInstance().isSfxMuted(), () -> {
-            SoundManager.getInstance().toggleSFX();
-        });
+        HBox sfxRow = createToggleRow("Sound Effects", SoundManager.getInstance().isSfxMuted(),
+                () -> SoundManager.getInstance().toggleSFX());
 
         audioBox.getChildren().addAll(bgmRow, sfxRow);
 
@@ -93,7 +82,7 @@ public class SettingsView extends StackPane {
         toggleBtn.setOnAction(e -> {
             onToggle.run();
             SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
-            
+
             // Cek state baru (kebalikan dari isMuted awal)
             boolean newState = toggleBtn.getText().equals("ON"); // Jika ON berarti mau dimatikan
             updateButtonStyle(toggleBtn, newState);
@@ -106,10 +95,12 @@ public class SettingsView extends StackPane {
 
     private void updateButtonStyle(Button btn, boolean isMuted) {
         if (isMuted) {
-            btn.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #888888; -fx-border-color: #888888; -fx-background-radius: 0; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+            btn.setStyle(
+                    "-fx-background-color: #1a1a1a; -fx-text-fill: #888888; -fx-border-color: #888888; -fx-background-radius: 0; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
             btn.getStyleClass().add("off-state");
         } else {
-            btn.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #00ff00; -fx-border-color: #00ff00; -fx-background-radius: 0; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+            btn.setStyle(
+                    "-fx-background-color: #1a1a1a; -fx-text-fill: #00ff00; -fx-border-color: #00ff00; -fx-background-radius: 0; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
             btn.getStyleClass().add("on-state");
         }
     }
@@ -132,7 +123,7 @@ public class SettingsView extends StackPane {
             action.run();
         });
         btn.setCursor(javafx.scene.Cursor.HAND);
-        
+
         btn.setOnMouseEntered(e -> {
             border.setFill(color);
             txt.setFill(Color.BLACK);
@@ -145,24 +136,5 @@ public class SettingsView extends StackPane {
         return btn;
     }
 
-    private void createFloatingAtoms(Pane pane) {
-        Random rand = new Random();
-        List<Circle> atoms = new ArrayList<>();
-        Color[] colors = {Color.RED, Color.CYAN, Color.LIME, Color.YELLOW};
-        for (int i = 0; i < 20; i++) {
-            Circle c = new Circle(rand.nextInt(4) + 2, colors[rand.nextInt(4)]);
-            c.setOpacity(0.2);
-            c.setTranslateX(rand.nextInt(800)); c.setTranslateY(rand.nextInt(600));
-            pane.getChildren().add(c);
-            atoms.add(c);
-        }
-        new AnimationTimer() {
-            public void handle(long now) {
-                for (Circle c : atoms) {
-                    c.setTranslateY(c.getTranslateY() - 0.3);
-                    if (c.getTranslateY() < 0) c.setTranslateY(pane.getHeight() + 10);
-                }
-            }
-        }.start();
-    }
+    // createFloatingAtoms removed
 }

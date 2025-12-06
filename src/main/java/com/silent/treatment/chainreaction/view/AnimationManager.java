@@ -41,7 +41,8 @@ public class AnimationManager {
         this.batchExecutionTimer.setCycleCount(1);
 
         // Listener otomatis DIHAPUS agar Turn-Based aman.
-        // Kita menggunakan pemicu manual di executeBatchCompletedTasks untuk Chain Reaction.
+        // Kita menggunakan pemicu manual di executeBatchCompletedTasks untuk Chain
+        // Reaction.
     }
 
     private void processAnimationForTask(ExplosionQueue.ExplosionTask task) {
@@ -103,26 +104,13 @@ public class AnimationManager {
         });
 
         Timeline pulse = ExplosionAnimation.createPreExplosionPulse(cellView);
-        pulse.setOnFinished(e -> {
-            spreadingWave.play();
-        });
+        pulse.setOnFinished(e -> spreadingWave.play());
 
         pulse.play();
     }
 
     public void processAllPendingAnimations() {
-        List<ExplosionQueue.ExplosionTask> readyTasks = new ArrayList<>();
-
-        ExplosionQueue.ExplosionTask task = explosionQueue.peekNext();
-        while (task != null) {
-            Cell cell = task.getCell();
-            // Hanya proses jika cell tersebut tidak sedang dianimasikan
-            if (!activeAnimations.containsKey(cell)) {
-                readyTasks.add(task);
-                explosionQueue.removeTask(task);
-            }
-            task = explosionQueue.peekNext();
-        }
+        List<ExplosionQueue.ExplosionTask> readyTasks = extractReadyTasks();
 
         if (readyTasks.isEmpty()) {
             checkAndNotifyCompletion();
@@ -130,63 +118,93 @@ public class AnimationManager {
         }
 
         javafx.application.Platform.runLater(() -> {
-            Set<Cell> allCells = new HashSet<>();
-            for (ExplosionQueue.ExplosionTask readyTask : readyTasks) {
-                Cell explodingCell = readyTask.getCell();
-                allCells.add(explodingCell);
-                for (Cell neighbor : explodingCell.getNeighbors()) {
-                    allCells.add(neighbor);
-                }
-            }
-
-            for (Cell cell : allCells) {
-                Node cellView = cellViewMap.get(cell);
-                if (cellView != null) {
-                    if (cellView.getUserData() == null) {
-                        cellView.setUserData(cell);
-                    }
-                    ExplosionAnimation.preCalculateCoordinate(cellView, animationContainer, cell);
-                }
-            }
-
-            for (ExplosionQueue.ExplosionTask readyTask : readyTasks) {
-                processAnimationForTask(readyTask);
-            }
-            
-            // Note: Kita tidak panggil checkAndNotifyCompletion di sini
-            // karena animasi baru saja dimulai (activeAnimations tidak kosong)
+            Set<Cell> allCells = collectAffectedCells(readyTasks);
+            preCalculateCellCoordinates(allCells);
+            processReadyTasks(readyTasks);
         });
     }
 
-    private void executeBatchCompletedTasks() {
-        List<ExplosionQueue.ExplosionTask> tasksToExecute;
+    private List<ExplosionQueue.ExplosionTask> extractReadyTasks() {
+        List<ExplosionQueue.ExplosionTask> readyTasks = new ArrayList<>();
 
-        synchronized (pendingCompletedTasks) {
-            if (pendingCompletedTasks.isEmpty()) {
-                checkAndNotifyCompletion();
-                return;
+        ExplosionQueue.ExplosionTask task = explosionQueue.peekNext();
+        while (task != null) {
+            Cell cell = task.getCell();
+            if (!activeAnimations.containsKey(cell)) {
+                readyTasks.add(task);
+                explosionQueue.removeTask(task);
             }
-            tasksToExecute = new ArrayList<>(pendingCompletedTasks);
-            pendingCompletedTasks.clear();
+            task = explosionQueue.peekNext();
         }
 
+        return readyTasks;
+    }
+
+    private Set<Cell> collectAffectedCells(List<ExplosionQueue.ExplosionTask> readyTasks) {
+        Set<Cell> allCells = new HashSet<>();
+        for (ExplosionQueue.ExplosionTask readyTask : readyTasks) {
+            Cell explodingCell = readyTask.getCell();
+            allCells.add(explodingCell);
+            allCells.addAll(explodingCell.getNeighbors());
+        }
+        return allCells;
+    }
+
+    private void preCalculateCellCoordinates(Set<Cell> cells) {
+        for (Cell cell : cells) {
+            Node cellView = cellViewMap.get(cell);
+            if (cellView != null) {
+                if (cellView.getUserData() == null) {
+                    cellView.setUserData(cell);
+                }
+                ExplosionAnimation.preCalculateCoordinate(cellView, animationContainer, cell);
+            }
+        }
+    }
+
+    private void processReadyTasks(List<ExplosionQueue.ExplosionTask> readyTasks) {
+        for (ExplosionQueue.ExplosionTask readyTask : readyTasks) {
+            processAnimationForTask(readyTask);
+        }
+    }
+
+    private void executeBatchCompletedTasks() {
+        List<ExplosionQueue.ExplosionTask> tasksToExecute = getTasksToExecute();
         if (tasksToExecute.isEmpty()) {
             checkAndNotifyCompletion();
             return;
         }
 
-        // 1. Kurangi Orb di cell pusat
+        processCenterCells(tasksToExecute);
+        Map<Cell, Map<Player, Integer>> allDistributions = collectOrbDistributions(tasksToExecute);
+        executeCellDistributions(allDistributions, tasksToExecute);
+        triggerChainReaction();
+    }
+
+    private List<ExplosionQueue.ExplosionTask> getTasksToExecute() {
+        synchronized (pendingCompletedTasks) {
+            if (pendingCompletedTasks.isEmpty()) {
+                checkAndNotifyCompletion();
+                return new ArrayList<>();
+            }
+            List<ExplosionQueue.ExplosionTask> tasks = new ArrayList<>(pendingCompletedTasks);
+            pendingCompletedTasks.clear();
+            return tasks;
+        }
+    }
+
+    private void processCenterCells(List<ExplosionQueue.ExplosionTask> tasksToExecute) {
         for (ExplosionQueue.ExplosionTask task : tasksToExecute) {
             int remainingOrbs = task.getCell().getOrbs() - task.getCell().getCriticalMass();
             task.getCell().setOrbs(remainingOrbs);
 
-            // Jika sisa orb masih overload (kasus langka orb sangat banyak), queue lagi
             if (remainingOrbs >= task.getCell().getCriticalMass()) {
                 explosionQueue.enqueueExplosion(task.getCell(), task.getBoard(), task.getPlayer());
             }
         }
+    }
 
-        // 2. Kumpulkan distribusi orb ke tetangga
+    private Map<Cell, Map<Player, Integer>> collectOrbDistributions(List<ExplosionQueue.ExplosionTask> tasksToExecute) {
         Map<Cell, Map<Player, Integer>> allDistributions = new HashMap<>();
 
         for (ExplosionQueue.ExplosionTask task : tasksToExecute) {
@@ -196,52 +214,64 @@ public class AnimationManager {
                 Cell target = entry.getKey();
                 int orbCount = entry.getValue();
 
-                if (!allDistributions.containsKey(target)) {
-                    allDistributions.put(target, new HashMap<>());
-                }
-
+                allDistributions.computeIfAbsent(target, k -> new HashMap<>());
                 Map<Player, Integer> playerOrbs = allDistributions.get(target);
                 Player taskPlayer = task.getPlayer();
                 playerOrbs.put(taskPlayer, playerOrbs.getOrDefault(taskPlayer, 0) + orbCount);
             }
         }
 
-        // 3. Eksekusi penambahan orb ke tetangga
-        // Disinilah "addOrb" akan dipanggil, yang mungkin memicu enqueueExplosion baru!
+        return allDistributions;
+    }
+
+    private void executeCellDistributions(Map<Cell, Map<Player, Integer>> allDistributions,
+            List<ExplosionQueue.ExplosionTask> tasksToExecute) {
         for (Map.Entry<Cell, Map<Player, Integer>> entry : allDistributions.entrySet()) {
             Cell target = entry.getKey();
             Map<Player, Integer> playerOrbs = entry.getValue();
 
             if (playerOrbs.size() == 1) {
-                Map.Entry<Player, Integer> singleEntry = playerOrbs.entrySet().iterator().next();
-                target.addOrbs(singleEntry.getValue(), singleEntry.getKey(), tasksToExecute.get(0).getBoard());
+                executeSinglePlayerDistribution(target, playerOrbs, tasksToExecute);
             } else {
-                Player dominantPlayer = null;
-                int maxOrbs = 0;
-                int totalOrbs = 0;
+                executeMultiPlayerDistribution(target, playerOrbs, tasksToExecute);
+            }
+        }
+    }
 
-                for (Map.Entry<Player, Integer> playerEntry : playerOrbs.entrySet()) {
-                    totalOrbs += playerEntry.getValue();
-                    if (playerEntry.getValue() > maxOrbs) {
-                        maxOrbs = playerEntry.getValue();
-                        dominantPlayer = playerEntry.getKey();
-                    }
-                }
+    private void executeSinglePlayerDistribution(Cell target, Map<Player, Integer> playerOrbs,
+            List<ExplosionQueue.ExplosionTask> tasksToExecute) {
+        Map.Entry<Player, Integer> singleEntry = playerOrbs.entrySet().iterator().next();
+        target.addOrbs(singleEntry.getValue(), singleEntry.getKey(), tasksToExecute.get(0).getBoard());
+    }
 
-                if (dominantPlayer != null) {
-                    target.addOrbs(totalOrbs, dominantPlayer, tasksToExecute.get(0).getBoard());
-                }
+    private void executeMultiPlayerDistribution(Cell target, Map<Player, Integer> playerOrbs,
+            List<ExplosionQueue.ExplosionTask> tasksToExecute) {
+        Player dominantPlayer = findDominantPlayer(playerOrbs);
+        int totalOrbs = playerOrbs.values().stream().mapToInt(Integer::intValue).sum();
+
+        if (dominantPlayer != null) {
+            target.addOrbs(totalOrbs, dominantPlayer, tasksToExecute.get(0).getBoard());
+        }
+    }
+
+    private Player findDominantPlayer(Map<Player, Integer> playerOrbs) {
+        Player dominantPlayer = null;
+        int maxOrbs = 0;
+
+        for (Map.Entry<Player, Integer> playerEntry : playerOrbs.entrySet()) {
+            if (playerEntry.getValue() > maxOrbs) {
+                maxOrbs = playerEntry.getValue();
+                dominantPlayer = playerEntry.getKey();
             }
         }
 
-        // [FIX UTAMA] RE-TRIGGER ANIMASI
-        // Cek apakah batch barusan menyebabkan ledakan baru di Queue?
+        return dominantPlayer;
+    }
+
+    private void triggerChainReaction() {
         if (explosionQueue.peekNext() != null) {
-            // Jika ADA ledakan baru, langsung proses animasinya!
-            // Inilah yang membuat rantai ledakan berlanjut.
             processAllPendingAnimations();
         } else {
-            // Jika TIDAK ADA ledakan baru, baru kita cek apakah game boleh lanjut
             checkAndNotifyCompletion();
         }
     }
@@ -251,9 +281,9 @@ public class AnimationManager {
         // 1. Tidak ada animasi visual yang sedang jalan
         // 2. Tidak ada pending task yang menunggu dieksekusi
         // 3. Tidak ada task baru di queue
-        boolean isReallyEmpty = activeAnimations.isEmpty() 
-                             && pendingCompletedTasks.isEmpty()
-                             && explosionQueue.peekNext() == null;
+        boolean isReallyEmpty = activeAnimations.isEmpty()
+                && pendingCompletedTasks.isEmpty()
+                && explosionQueue.peekNext() == null;
 
         if (isReallyEmpty) {
             ExplosionAnimation.clearCoordinateCache();
@@ -267,10 +297,17 @@ public class AnimationManager {
     }
 
     public void clear() {
+        if (batchExecutionTimer != null) {
+            batchExecutionTimer.stop();
+        }
         for (Animation anim : activeAnimations.values()) {
             anim.stop();
         }
         activeAnimations.clear();
+        animatingTasks.clear();
+        synchronized (pendingCompletedTasks) {
+            pendingCompletedTasks.clear();
+        }
         animationContainer.getChildren().clear();
     }
 }

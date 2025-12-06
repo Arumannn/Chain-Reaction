@@ -1,15 +1,12 @@
 package com.silent.treatment.chainreaction.view;
 
-import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -18,16 +15,14 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import com.silent.treatment.chainreaction.core.SoundManager;
 
 public class MenuView extends StackPane {
 
-    private final Runnable onNewGame;
+    private static final String FONT_FAMILY = "Arial";
+
     private final Runnable onExit;
-    private final Runnable onTutorial;
-    private final Runnable onVsAI;
 
     private final List<StackPane> menuButtons = new ArrayList<>();
     private int selectedIndex = 0;
@@ -35,14 +30,10 @@ public class MenuView extends StackPane {
     private final VBox menuContainer;
 
     public MenuView(Runnable onNewGame, Runnable onExit, Runnable onTutorial, Runnable onVsAI) {
-        this.onNewGame = onNewGame;
         this.onExit = onExit;
-        this.onTutorial = onTutorial;
-        this.onVsAI = onVsAI;
-
         Pane backgroundLayer = new Pane();
         backgroundLayer.setStyle("-fx-background-color: #0a0a0a;");
-        createFloatingAtoms(backgroundLayer);
+        ParticleBackground.attachTo(backgroundLayer);
         this.getChildren().add(backgroundLayer);
 
         Text title = new Text("CHAIN\nREACTION");
@@ -85,12 +76,11 @@ public class MenuView extends StackPane {
         // Dapatkan stage dari scene saat ini
         if (getScene() != null && getScene().getWindow() instanceof Stage) {
             Stage stage = (Stage) getScene().getWindow();
-            
-            // Buat SettingsView dengan callback Back yang mengembalikan scene ke MenuView ini
-            SettingsView settingsView = new SettingsView(() -> {
-                stage.getScene().setRoot(this); // Kembali ke menu ini
-            });
-            
+
+            // Buat SettingsView dengan callback Back yang mengembalikan scene ke MenuView
+            // ini
+            SettingsView settingsView = new SettingsView(() -> stage.getScene().setRoot(this));
+
             stage.getScene().setRoot(settingsView);
         }
     }
@@ -121,7 +111,7 @@ public class MenuView extends StackPane {
 
         Label lblDesc = new Label("Are you sure you want to quit?");
         lblDesc.setTextFill(Color.LIGHTGRAY);
-        lblDesc.setFont(Font.font("Arial", 16));
+        lblDesc.setFont(Font.font(FONT_FAMILY, 16));
 
         HBox buttons = new HBox(20);
         buttons.setAlignment(Pos.CENTER);
@@ -173,7 +163,7 @@ public class MenuView extends StackPane {
 
     private StackPane createButton(String text, Color color, Runnable action) {
         Text txt = new Text(text);
-        txt.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        txt.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 18));
         txt.setFill(color);
 
         Rectangle border = new Rectangle(250, 50);
@@ -201,7 +191,7 @@ public class MenuView extends StackPane {
 
     private StackPane createMiniButton(String text, Color color, Runnable action) {
         Text txt = new Text(text);
-        txt.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        txt.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 14));
         txt.setFill(Color.WHITE);
 
         Rectangle border = new Rectangle(120, 40);
@@ -212,7 +202,6 @@ public class MenuView extends StackPane {
         border.setArcHeight(0);
 
         StackPane btn = new StackPane(border, txt);
-        // btn.setOnMouseClicked(e -> action.run());
         btn.setOnMouseClicked(e -> {
             SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
             action.run();
@@ -228,28 +217,5 @@ public class MenuView extends StackPane {
             txt.setFill(Color.WHITE);
         });
         return btn;
-    }
-
-    private void createFloatingAtoms(Pane pane) {
-        Random rand = new Random();
-        List<Circle> atoms = new ArrayList<>();
-        Color[] colors = { Color.RED, Color.CYAN, Color.LIME, Color.YELLOW };
-        for (int i = 0; i < 15; i++) {
-            Circle c = new Circle(rand.nextInt(5) + 2, colors[rand.nextInt(4)]);
-            c.setOpacity(0.3);
-            c.setTranslateX(rand.nextInt(400));
-            c.setTranslateY(rand.nextInt(600));
-            pane.getChildren().add(c);
-            atoms.add(c);
-        }
-        new AnimationTimer() {
-            public void handle(long now) {
-                for (Circle c : atoms) {
-                    c.setTranslateY(c.getTranslateY() - 0.5);
-                    if (c.getTranslateY() < 0)
-                        c.setTranslateY(700);
-                }
-            }
-        }.start();
     }
 }

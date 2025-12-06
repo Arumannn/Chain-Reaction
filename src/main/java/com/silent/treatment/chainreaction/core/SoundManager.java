@@ -6,18 +6,19 @@ import javafx.scene.media.MediaPlayer;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Singleton class untuk mengelola Audio (BGM & SFX).
  */
 public class SoundManager {
-    private static SoundManager instance;
-    
+    private static final Logger logger = Logger.getLogger(SoundManager.class.getName());
+
     private MediaPlayer bgmPlayer;
 
     private boolean isBgmMuted = false;
     private boolean isSfxMuted = false;
-    
+
     // Cache untuk SFX agar tidak reload file berulang kali
     private Map<String, AudioClip> sfxCache = new HashMap<>();
 
@@ -29,17 +30,21 @@ public class SoundManager {
     public static final String SFX_POP = "/com/silent/treatment/chainreaction/assets/sounds/pop.mp3";
     public static final String SFX_WIN = "/com/silent/treatment/chainreaction/assets/sounds/win.mp3";
 
-    private SoundManager() {}
+    private SoundManager() {
+    }
+
+    // Bill Pugh Singleton pattern - thread-safe lazy initialization
+    private static class SingletonHolder {
+        private static final SoundManager INSTANCE = new SoundManager();
+    }
 
     public static SoundManager getInstance() {
-        if (instance == null) {
-            instance = new SoundManager();
-        }
-        return instance;
+        return SingletonHolder.INSTANCE;
     }
 
     /**
      * Memulai Background Music.
+     * 
      * @param resourcePath Path ke file audio di resources (dimulai dengan /)
      */
     public void playBGM(String resourcePath) {
@@ -50,19 +55,20 @@ public class SoundManager {
             }
 
             URL url = getClass().getResource(resourcePath);
-            if (url == null) return;
+            if (url == null)
+                return;
 
             Media media = new Media(url.toExternalForm());
             bgmPlayer = new MediaPlayer(media);
             bgmPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-            bgmPlayer.setVolume(0.4); 
-            
+            bgmPlayer.setVolume(0.4);
+
             if (!isBgmMuted) { // Cek flag BGM
                 bgmPlayer.play();
             }
-            
+
         } catch (Exception e) {
-            System.err.println("Error playing BGM");
+            logger.warning("Error playing BGM");
         }
     }
 
@@ -71,7 +77,8 @@ public class SoundManager {
      * Cocok untuk klik, ledakan, dll.
      */
     public void playSFX(String resourcePath) {
-        if (isSfxMuted) return; // Cek flag SFX
+        if (isSfxMuted)
+            return; // Cek flag SFX
 
         try {
             if (!sfxCache.containsKey(resourcePath)) {
@@ -84,7 +91,7 @@ public class SoundManager {
             }
             sfxCache.get(resourcePath).play();
         } catch (Exception e) {
-            // System.err.println("Error playing SFX");
+            // Silent catch - SFX errors are non-critical
         }
     }
 
@@ -92,8 +99,10 @@ public class SoundManager {
     public void toggleBGM() {
         isBgmMuted = !isBgmMuted;
         if (bgmPlayer != null) {
-            if (isBgmMuted) bgmPlayer.pause();
-            else bgmPlayer.play();
+            if (isBgmMuted)
+                bgmPlayer.pause();
+            else
+                bgmPlayer.play();
         }
     }
 
@@ -101,9 +110,14 @@ public class SoundManager {
     public void toggleSFX() {
         isSfxMuted = !isSfxMuted;
     }
-    
-    public boolean isBgmMuted() { return isBgmMuted; }
-    public boolean isSfxMuted() { return isSfxMuted; }
+
+    public boolean isBgmMuted() {
+        return isBgmMuted;
+    }
+
+    public boolean isSfxMuted() {
+        return isSfxMuted;
+    }
 
     /**
      * Menghentikan BGM yang sedang berjalan (digunakan saat reset ke Main Menu).
@@ -119,4 +133,4 @@ public class SoundManager {
             // ignore error stop BGM
         }
     }
-} 
+}

@@ -1,17 +1,16 @@
 package com.silent.treatment.chainreaction.model;
 
 public enum MapType {
-    
+
     SMALL("Small (9x6)", 9, 6),
     MEDIUM("Medium (10x10)", 10, 10),
     WIDE("Wide (6x9)", 9, 6),
     LONG("Long (6x12)", 12, 6),
-    
+
     DONUT("Hollow Square", 8, 8) {
         @Override
         public boolean isValid(int x, int y) {
-            if (x >= 3 && x <= 4 && y >= 3 && y <= 4) return false;
-            return true;
+            return !(x >= 3 && x <= 4 && y >= 3 && y <= 4);
         }
     },
 
@@ -27,20 +26,20 @@ public enum MapType {
     DIAMOND("Diamond", 11, 11) {
         @Override
         public boolean isValid(int x, int y) {
-            int cx = 5; 
-            int cy = 5; 
+            int cx = 5;
+            int cy = 5;
             int radius = 5;
             boolean baseDiamond = Math.abs(x - cx) + Math.abs(y - cy) <= radius;
-            
+
             boolean topTipSupport = (y == 0 && (x == 4 || x == 6));
             boolean bottomTipSupport = (y == 10 && (x == 4 || x == 6));
             boolean leftTipSupport = (x == 0 && (y == 4 || y == 6));
             boolean rightTipSupport = (x == 10 && (y == 4 || y == 6));
-            
+
             return baseDiamond || topTipSupport || bottomTipSupport || leftTipSupport || rightTipSupport;
         }
     },
-    
+
     HOURGLASS("Hourglass", 9, 9) {
         @Override
         public boolean isValid(int x, int y) {
@@ -52,9 +51,9 @@ public enum MapType {
             }
 
             boolean topCornersSupport = (y == 1 && (x == 0 || x == 8));
-            
+
             boolean bottomCornersSupport = (y == 7 && (x == 0 || x == 8));
-            
+
             return baseShape || topCornersSupport || bottomCornersSupport;
         }
     };
@@ -69,14 +68,33 @@ public enum MapType {
         this.height = height;
     }
 
+    /**
+     * Validates if a cell at position (x, y) is valid for this map type.
+     * Default implementation allows all cells (for rectangular maps).
+     * Overridden by special map shapes (DONUT, PLUS, DIAMOND, HOURGLASS).
+     *
+     * @param x The x-coordinate of the cell
+     * @param y The y-coordinate of the cell
+     * @return true if the cell is valid, false otherwise
+     */
     public boolean isValid(int x, int y) {
         return true;
     }
 
-    public String getLabel() { return label; }
-    public int getWidth() { return width; }
-    public int getHeight() { return height; }
-    
+    public String getLabel() {
+        return label;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
     @Override
-    public String toString() { return label; }
+    public String toString() {
+        return label;
+    }
 }

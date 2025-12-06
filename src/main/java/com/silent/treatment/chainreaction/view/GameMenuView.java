@@ -25,7 +25,6 @@ public class GameMenuView extends StackPane {
         // 2. Panel Menu Box
         VBox menuBox = new VBox(20);
         menuBox.setMaxWidth(300);
-        // menuBox.setMaxHeight(250);
         menuBox.setAlignment(Pos.CENTER);
         menuBox.setPadding(new Insets(30));
 

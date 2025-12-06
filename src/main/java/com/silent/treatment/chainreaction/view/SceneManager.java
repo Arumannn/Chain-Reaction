@@ -19,15 +19,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SceneManager {
+    private static final String STYLESHEET_PATH = "/pixel-style.css";
+
     private static SceneManager instance;
     private Stage stage;
     private StackPane globalGameRoot; // Root untuk Game + Overlay (Pause/GameOver)
-    private GameLayout gameLayout;    // UI utama Game (Header + Board + Sidebar)
+    private GameLayout gameLayout; // UI utama Game (Header + Board + Sidebar)
+    private PauseTransition currentAiDelay; // Untuk tracking AI delay agar bisa di-stop
 
-    private SceneManager() {}
+    private SceneManager() {
+    }
 
     public static SceneManager getInstance() {
-        if (instance == null) instance = new SceneManager();
+        if (instance == null)
+            instance = new SceneManager();
         return instance;
     }
 
@@ -39,36 +44,48 @@ public class SceneManager {
 
     public void showMainMenu() {
         resetGameState();
+        // [Fix] Play BGM again because resetGameState stops it
+        SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
+
         MenuView menuView = new MenuView(
-            this::showGameSetup,
-            () -> System.exit(0),
-            this::showTutorial,
-            null
-        );
-        // Casting (Parent) untuk menghindari error compiler di VS Code
-        Scene scene = new Scene((Parent) menuView, 450, 700);
-        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
-        stage.setScene(scene);
-        stage.centerOnScreen();
+                this::showGameSetup,
+                () -> System.exit(0),
+                this::showTutorial,
+                null);
+        // [Modified] Use adaptive scene size & reuse scene
+        if (stage.getScene() == null) {
+            Scene scene = new Scene((Parent) menuView);
+            scene.getStylesheets().add(getClass().getResource(STYLESHEET_PATH).toExternalForm());
+            stage.setScene(scene);
+        } else {
+            stage.getScene().setRoot((Parent) menuView);
+        }
     }
 
     public void showGameSetup() {
         SetupView setupView = new SetupView(
-            this::startGame,
-            this::showMainMenu
-        );
-        Scene scene = new Scene((Parent) setupView, 500, 600);
-        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
-        stage.setScene(scene);
-        stage.centerOnScreen();
+                this::startGame,
+                this::showMainMenu);
+        // [Modified] Use adaptive scene size & reuse scene
+        if (stage.getScene() == null) {
+            Scene scene = new Scene((Parent) setupView);
+            scene.getStylesheets().add(getClass().getResource(STYLESHEET_PATH).toExternalForm());
+            stage.setScene(scene);
+        } else {
+            stage.getScene().setRoot((Parent) setupView);
+        }
     }
 
     public void showTutorial() {
         TutorialView tutorialView = new TutorialView(this::showMainMenu);
-        Scene scene = new Scene((Parent) tutorialView, 700, 600);
-        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
-        stage.setScene(scene);
-        stage.centerOnScreen();
+        // [Modified] Use adaptive scene size & reuse scene
+        if (stage.getScene() == null) {
+            Scene scene = new Scene((Parent) tutorialView);
+            scene.getStylesheets().add(getClass().getResource(STYLESHEET_PATH).toExternalForm());
+            stage.setScene(scene);
+        } else {
+            stage.getScene().setRoot((Parent) tutorialView);
+        }
     }
 
     // --- LOGIKA UTAMA GAME (Dipindahkan dari MainApp) ---
@@ -76,16 +93,16 @@ public class SceneManager {
     public void startGame(GameConfig config) {
         // 1. Init Core
         GameManager gm = GameManager.getInstance();
-        gm.initializeGame(config.mapType, config.players);
+        gm.initializeGame(config.getMapType(), config.getPlayers());
         SoundManager.getInstance().playBGM(SoundManager.BGM_MAIN);
 
         // 2. Init Controller & Grid
         GameController controller = new GameController();
         GridPanel gridPanel = new GridPanel(gm.getBoard(), controller);
-        
+
         // 3. Init Layout UI (Menggunakan class GameLayout baru)
         gameLayout = new GameLayout(gm, gridPanel, this::showInGameMenu);
-        
+
         // StackPane untuk menampung GameLayout dan Overlay (Pause/GameOver)
         globalGameRoot = new StackPane(gameLayout);
 
@@ -93,7 +110,18 @@ public class SceneManager {
         List<AIController> aiControllers = setupAI(config, controller);
 
         // 5. Wiring Listeners
-        gm.getBoard().attachGlobalObserver(cell -> Platform.runLater(() -> gameLayout.updateGameInfo()));
+        gm.getBoard().attachGlobalObserver(cell -> Platform.runLater(() -> {
+            // [Fix] Cek eliminasi secara real-time setiap ada perubahan cell
+            gm.checkEliminations();
+            gameLayout.updateGameInfo();
+
+            // [Fix] Cek Win Condition segera jika terjadi di tengah animasi
+            Player winner = gm.checkWinner();
+            if (winner != null) {
+                gridPanel.clearAnimations(); // Stop chaos
+                showGameOverDialog(winner);
+            }
+        }));
 
         Runnable handleTurnChanged = () -> {
             gameLayout.updateGameInfo();
@@ -110,22 +138,23 @@ public class SceneManager {
         handleTurnChanged.run();
 
         // 6. Set Scene
-        double winWidth = Math.max(800, (config.mapType.getWidth() * 60) + 350);
-        double winHeight = Math.max(600, (config.mapType.getHeight() * 60) + 150);
-        
-        Scene scene = new Scene(globalGameRoot, winWidth, winHeight);
-        scene.getStylesheets().add(getClass().getResource("/pixel-style.css").toExternalForm());
-        stage.setScene(scene);
-        stage.centerOnScreen();
+        // [Modified] Use adaptive scene size (Maximized) & reuse scene
+        if (stage.getScene() == null) {
+            Scene scene = new Scene(globalGameRoot);
+            scene.getStylesheets().add(getClass().getResource(STYLESHEET_PATH).toExternalForm());
+            stage.setScene(scene);
+        } else {
+            stage.getScene().setRoot(globalGameRoot);
+        }
     }
 
     // --- HELPER METHODS ---
 
     private List<AIController> setupAI(GameConfig config, GameController controller) {
         List<AIController> ais = new ArrayList<>();
-        for (int i = 0; i < config.players.size(); i++) {
-            if (config.isBot.get(i)) {
-                ais.add(new AIController(controller, config.botDifficulty));
+        for (int i = 0; i < config.getPlayers().size(); i++) {
+            if (config.getIsBot().get(i)) {
+                ais.add(new AIController(controller, config.getBotDifficulty()));
             } else {
                 ais.add(null);
             }
@@ -140,9 +169,16 @@ public class SceneManager {
         if (ai != null) {
             gridPanel.setPlayerInteractionEnabled(false);
             Platform.runLater(() -> {
-                PauseTransition delay = new PauseTransition(Duration.millis(1000));
-                delay.setOnFinished(e -> ai.performMove());
-                delay.play();
+                if (currentAiDelay != null) {
+                    currentAiDelay.stop();
+                }
+                currentAiDelay = new PauseTransition(Duration.millis(1000));
+                currentAiDelay.setOnFinished(e -> {
+                    if (GameManager.getInstance().isGameOver())
+                        return;
+                    ai.performMove();
+                });
+                currentAiDelay.play();
             });
         } else {
             gridPanel.setPlayerInteractionEnabled(true);
@@ -150,6 +186,14 @@ public class SceneManager {
     }
 
     private void resetGameState() {
+        if (currentAiDelay != null) {
+            currentAiDelay.stop();
+            currentAiDelay = null;
+        }
+        if (gameLayout != null) {
+            gameLayout.cleanup();
+        }
+
         SoundManager.getInstance().stopBGM();
         ExplosionQueue.getInstance().clear();
         GameManager.getInstance().reset();
@@ -159,25 +203,26 @@ public class SceneManager {
 
     private void showInGameMenu() {
         GameMenuView menuView = new GameMenuView(
-            () -> { // Resume
-                gameLayout.setEffect(null);
-                globalGameRoot.getChildren().removeIf(n -> n instanceof GameMenuView);
-            },
-            this::showMainMenu // Exit
+                () -> { // Resume
+                    gameLayout.setEffect(null);
+                    globalGameRoot.getChildren().removeIf(GameMenuView.class::isInstance);
+                },
+                this::showMainMenu // Exit
         );
         gameLayout.setEffect(new GaussianBlur(10));
         globalGameRoot.getChildren().add(menuView);
     }
 
     private void showGameOverDialog(Player winner) {
-        if (winner == null) return;
+        if (winner == null)
+            return;
         globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance);
-        
+
         GameOverView view = new GameOverView(winner, this::showMainMenu, () -> {
             gameLayout.setEffect(null);
             globalGameRoot.getChildren().removeIf(GameOverView.class::isInstance);
         });
-        
+
         gameLayout.setEffect(new GaussianBlur(10));
         globalGameRoot.getChildren().add(view);
     }

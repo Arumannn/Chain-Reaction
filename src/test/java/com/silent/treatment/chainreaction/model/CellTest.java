@@ -12,7 +12,6 @@ class CellTest {
 
     private Cell cell;
     private Player p1;
-    private Board mockBoard; // Board bisa di-mock atau null jika method addOrb butuh
 
     @BeforeEach
     void setUp() {

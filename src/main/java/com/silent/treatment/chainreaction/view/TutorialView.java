@@ -74,7 +74,10 @@ public class TutorialView extends BorderPane {
         lblTitle.setTextFill(Color.GRAY);
         lblTitle.setFont(Font.font("Impact", 24));
 
-        StackPane btnSkip = createStyledButton("SKIP", Color.RED, onExit);
+        StackPane btnSkip = createStyledButton("SKIP", Color.RED, () -> {
+            tutorialController.stop();
+            onExit.run();
+        });
         btnSkip.setMaxWidth(80);
         btnSkip.setMaxHeight(30);
 

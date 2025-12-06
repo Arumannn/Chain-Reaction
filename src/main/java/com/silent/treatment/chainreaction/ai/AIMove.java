@@ -37,6 +37,24 @@ public class AIMove implements Comparable<AIMove> {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        AIMove aiMove = (AIMove) obj;
+        return x == aiMove.x && y == aiMove.y && Double.compare(aiMove.score, score) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Integer.hashCode(x);
+        result = 31 * result + Integer.hashCode(y);
+        result = 31 * result + Double.hashCode(score);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return String.format("Move(%d, %d) Score: %.2f", x, y, score);
     }

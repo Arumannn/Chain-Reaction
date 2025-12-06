@@ -16,7 +16,9 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 public class GameLayout extends BorderPane {
-    
+
+    private static final String FONT_FAMILY = "Arial";
+
     private final GameManager gm;
     private final GridPanel gridPanel;
     private final Runnable onMenuClick;
@@ -32,11 +34,11 @@ public class GameLayout extends BorderPane {
         this.onMenuClick = onMenuClick;
 
         this.setStyle("-fx-background-color: #0a0a0a;");
-        
+
         // Susun Layout
         this.setTop(createHeader());
         this.setRight(createPlayerSidebar());
-        
+
         VBox centerBox = new VBox(gridPanel);
         centerBox.setAlignment(Pos.CENTER);
         centerBox.setPadding(new Insets(20));
@@ -44,6 +46,9 @@ public class GameLayout extends BorderPane {
     }
 
     public void updateGameInfo() {
+        if (gm.getPlayers().isEmpty()) {
+            return;
+        }
         Player current = gm.getCurrentPlayer();
 
         // Update Header Info
@@ -75,13 +80,13 @@ public class GameLayout extends BorderPane {
 
         Label titleLabel = new Label("CURRENT TURN:");
         titleLabel.setTextFill(Color.GRAY);
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        titleLabel.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 14));
 
         turnIndicatorCircle = new Circle(8);
         turnIndicatorCircle.setStroke(Color.WHITE);
 
         turnLabel = new Label();
-        turnLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        turnLabel.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 18));
 
         turnInfoBox.getChildren().addAll(titleLabel, turnIndicatorCircle, turnLabel);
 
@@ -89,8 +94,9 @@ public class GameLayout extends BorderPane {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button btnMenu = new Button("MENU");
-        btnMenu.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #888888; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
-        btnMenu.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        btnMenu.setStyle(
+                "-fx-background-color: #1a1a1a; -fx-text-fill: white; -fx-border-color: #888888; -fx-border-radius: 0; -fx-border-width: 3; -fx-cursor: hand;");
+        btnMenu.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 12));
         btnMenu.setOnAction(e -> {
             SoundManager.getInstance().playSFX(SoundManager.SFX_CLICK);
             onMenuClick.run();
@@ -115,7 +121,7 @@ public class GameLayout extends BorderPane {
 
         Label title = new Label("PLAYER STATUS");
         title.setTextFill(Color.WHITE);
-        title.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 16));
+        title.setFont(Font.font(FONT_FAMILY, FontWeight.EXTRA_BOLD, 16));
 
         playersStatusBox = new VBox(10);
         sidebar.getChildren().addAll(title, new Separator(), playersStatusBox);
@@ -128,7 +134,8 @@ public class GameLayout extends BorderPane {
         row.setPadding(new Insets(10));
 
         if (p.equals(current)) {
-            row.setStyle("-fx-background-color: #2a2a2a; -fx-background-radius: 0; -fx-border-color: #00ff00; -fx-border-width: 3;");
+            row.setStyle(
+                    "-fx-background-color: #2a2a2a; -fx-background-radius: 0; -fx-border-color: #00ff00; -fx-border-width: 3;");
             row.getStyleClass().add("current");
         }
         row.getStyleClass().add("player-row");
@@ -137,10 +144,10 @@ public class GameLayout extends BorderPane {
         VBox infoBox = new VBox(2);
 
         Label name = new Label(p.getName());
-        name.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        
+        name.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 12));
+
         Label status = new Label();
-        status.setFont(Font.font("Arial", 11));
+        status.setFont(Font.font(FONT_FAMILY, 11));
 
         if (p.isAlive()) {
             name.setTextFill(Color.LIGHTGRAY);
@@ -151,11 +158,17 @@ public class GameLayout extends BorderPane {
             icon.setFill(Color.DARKGRAY);
             status.setText("GAME OVER");
             status.setTextFill(Color.RED);
-            status.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+            status.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 10));
         }
 
         infoBox.getChildren().addAll(name, status);
         row.getChildren().addAll(icon, infoBox);
         return row;
+    }
+
+    public void cleanup() {
+        if (gridPanel != null) {
+            gridPanel.clearAnimations();
+        }
     }
 }

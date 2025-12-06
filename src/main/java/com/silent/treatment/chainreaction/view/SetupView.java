@@ -4,33 +4,31 @@ import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.core.SoundManager;
 import com.silent.treatment.chainreaction.model.MapType;
 import com.silent.treatment.chainreaction.view.DifficultySelectionView.Difficulty;
-import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.function.Consumer;
 
 public class SetupView extends StackPane {
 
+    private static final String FONT_FAMILY = "Arial";
+    private static final String CONTROL_STYLE = "-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;";
+
     // Struktur Data untuk dikirim ke MainApp
     public static class GameConfig {
-        public MapType mapType;
-        public List<Player> players;
-        public List<Boolean> isBot; // Track player mana yang bot
-        public Difficulty botDifficulty; // Difficulty untuk semua bot
+        private final MapType mapType;
+        private final List<Player> players;
+        private final List<Boolean> isBot; // Track player mana yang bot
+        private final Difficulty botDifficulty; // Difficulty untuk semua bot
 
         public GameConfig(MapType map, List<Player> p, List<Boolean> bots, Difficulty diff) {
             this.mapType = map;
@@ -38,14 +36,28 @@ public class SetupView extends StackPane {
             this.isBot = bots;
             this.botDifficulty = diff;
         }
+
+        public MapType getMapType() {
+            return mapType;
+        }
+
+        public List<Player> getPlayers() {
+            return players;
+        }
+
+        public List<Boolean> getIsBot() {
+            return isBot;
+        }
+
+        public Difficulty getBotDifficulty() {
+            return botDifficulty;
+        }
     }
 
     private final Consumer<GameConfig> onStartGame;
     private ComboBox<MapType> boardSizeCombo;
-    private final Runnable onBack;
 
     // UI Components
-    // private ComboBox<String> boardSizeCombo;
     private Spinner<Integer> playerCountSpinner;
     private Spinner<Integer> botCountSpinner;
     private ComboBox<Difficulty> botDifficultyCombo;
@@ -53,12 +65,11 @@ public class SetupView extends StackPane {
 
     public SetupView(Consumer<GameConfig> onStartGame, Runnable onBack) {
         this.onStartGame = onStartGame;
-        this.onBack = onBack;
 
         // --- 1. Background Animasi (Konsisten dengan Menu) ---
         Pane backgroundLayer = new Pane();
         backgroundLayer.setStyle("-fx-background-color: #0a0a0a;");
-        createFloatingAtoms(backgroundLayer);
+        ParticleBackground.attachTo(backgroundLayer);
 
         // --- 2. Panel Utama (Glass Effect) ---
         VBox mainPanel = new VBox(20);
@@ -84,46 +95,48 @@ public class SetupView extends StackPane {
         title.setFont(Font.font("Impact", 40));
         title.setEffect(new DropShadow(10, Color.CYAN));
 
-        // --- 4. Game Settings Section ---
-        VBox settingsBox = new VBox(15);
-        settingsBox.setAlignment(Pos.CENTER);
-
-        // Input: Board Size
-        VBox sizeBox = createStyledInputGroup("Board Size", createCustomComboBox());
-
-        // Input: Player Count
-        VBox countBox = createStyledInputGroup("Total Players", createCustomSpinner());
-
-        // Input: Bot Count
-        VBox botCountBox = createStyledInputGroup("Number of Bots", createBotCountSpinner());
-
-        // Input: Bot Difficulty
-        VBox botDiffBox = createStyledInputGroup("Bot Difficulty", createBotDifficultyCombo());
-
-        HBox topSettings = new HBox(20, sizeBox, countBox);
+        // --- 4. Game Settings (Grid Format) ---
+        GridPane topSettings = new GridPane();
+        topSettings.setHgap(20);
+        topSettings.setVgap(15);
         topSettings.setAlignment(Pos.CENTER);
 
-        HBox botSettings = new HBox(20, botCountBox, botDiffBox);
+        // Map Size
+        boardSizeCombo = createCustomComboBox();
+        topSettings.add(createStyledInputGroup("MAP SIZE", boardSizeCombo), 0, 0);
+
+        // Player Count
+        playerCountSpinner = createCustomSpinner();
+        topSettings.add(createStyledInputGroup("TOTAL PLAYERS", playerCountSpinner), 1, 0);
+
+        // Bot Settings
+        HBox botSettings = new HBox(20);
         botSettings.setAlignment(Pos.CENTER);
 
-        // --- 5. Player List Section ---
-        Label lblPlayers = new Label("PLAYER CONFIGURATION");
-        lblPlayers.setTextFill(Color.CYAN);
-        lblPlayers.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        botCountSpinner = createBotCountSpinner();
+        botSettings.getChildren().add(createStyledInputGroup("BOT COUNT", botCountSpinner));
+
+        botDifficultyCombo = createBotDifficultyCombo();
+        botSettings.getChildren().add(createStyledInputGroup("BOT DIFFICULTY", botDifficultyCombo));
+
+        // --- 5. Player List (Scrollable) ---
+        Label lblPlayers = new Label("PLAYERS CONFIGURATION");
+        lblPlayers.setTextFill(Color.LIME);
+        lblPlayers.setFont(Font.font("Impact", 18));
 
         playersContainer = new VBox(10);
-        playersContainer.setAlignment(Pos.CENTER);
+        playersContainer.setPadding(new Insets(10));
 
         ScrollPane scrollPane = new ScrollPane(playersContainer);
         scrollPane.setFitToWidth(true);
-        scrollPane.setPrefHeight(300);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: #333333; -fx-border-width: 2; -fx-border-radius: 0;");
-        scrollPane.getStylesheets()
-                .add("data:text/css,.scroll-pane > .viewport { -fx-background-color: transparent; }"); // Hack CSS
-                                                                                                       // inline
+        scrollPane.setPrefHeight(250);
+        scrollPane.setStyle("-fx-background: #0a0a0a; -fx-border-color: #444444;");
+        scrollPane.getStyleClass().add("edge-to-edge");
 
         // Init awal (2 pemain)
-        refreshPlayerInputs(2);
+        // Check current value safely
+        Integer currentVal = playerCountSpinner.getValue();
+        refreshPlayerInputs(currentVal != null ? currentVal : 2);
 
         // --- 6. Action Buttons ---
         HBox actionBox = new HBox(20);
@@ -160,23 +173,25 @@ public class SetupView extends StackPane {
 
             Label lbl = new Label("#" + (i + 1));
             lbl.setTextFill(Color.GRAY);
-            lbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            lbl.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 14));
             lbl.setPrefWidth(30);
 
             TextField nameField = new TextField("Player " + (i + 1));
             nameField.setPrefWidth(200);
-            nameField.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-background-radius: 0; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
+            nameField.setStyle(
+                    "-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-background-radius: 0; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
 
             ColorPicker colorPicker = new ColorPicker(defaults[i % defaults.length]);
             colorPicker.setPrefWidth(120);
-            colorPicker.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
+            colorPicker.setStyle(CONTROL_STYLE);
 
             // Auto-detect bot berdasarkan bot count
-            int botCount = botCountSpinner.getValue();
+            int botCount = (botCountSpinner != null && botCountSpinner.getValue() != null) ? botCountSpinner.getValue()
+                    : 0;
             Label typeLabel = new Label("");
             typeLabel.setPrefWidth(60);
             typeLabel.setAlignment(Pos.CENTER);
-            typeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+            typeLabel.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 11));
 
             if (i >= count - botCount) {
                 nameField.setText("AI Bot " + (i - (count - botCount) + 1));
@@ -200,7 +215,7 @@ public class SetupView extends StackPane {
     private VBox createStyledInputGroup(String labelText, Control input) {
         Label lbl = new Label(labelText);
         lbl.setTextFill(Color.LIGHTGRAY);
-        lbl.setFont(Font.font("Arial", 12));
+        lbl.setFont(Font.font(FONT_FAMILY, 12));
 
         VBox box = new VBox(5, lbl, input);
         box.setAlignment(Pos.CENTER_LEFT);
@@ -209,65 +224,67 @@ public class SetupView extends StackPane {
 
     // --- Helper UI: Custom ComboBox ---
     private ComboBox<MapType> createCustomComboBox() {
-        boardSizeCombo = new ComboBox<>();
-        boardSizeCombo.getItems().addAll(MapType.values());
-        boardSizeCombo.setValue(MapType.SMALL);
-        boardSizeCombo.setPrefWidth(180);
-        boardSizeCombo.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-font-size: 14px; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
-        return boardSizeCombo;
+        ComboBox<MapType> combo = new ComboBox<>();
+        combo.getItems().addAll(MapType.values());
+        combo.setValue(MapType.SMALL);
+        combo.setPrefWidth(180);
+        combo.setStyle(
+                "-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-font-size: 14px; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
+        return combo;
     }
 
     // --- Helper UI: Custom Spinner ---
     private Spinner<Integer> createCustomSpinner() {
-        playerCountSpinner = new Spinner<>(2, 8, 2);
-        playerCountSpinner.setPrefWidth(120);
-        playerCountSpinner.setStyle("-fx-background-color: #0a0a0a; -fx-body-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
+        Spinner<Integer> spinner = new Spinner<>(2, 8, 2);
+        spinner.setPrefWidth(120);
+        spinner.setStyle(
+                "-fx-background-color: #0a0a0a; -fx-body-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
         // Update list saat angka berubah
-        playerCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> {
+        spinner.valueProperty().addListener((obs, oldVal, newVal) -> {
             // Pastikan bot count tidak melebihi total players
             if (botCountSpinner != null && botCountSpinner.getValue() > newVal - 1) {
                 botCountSpinner.getValueFactory().setValue(Math.max(0, newVal - 1));
             }
             refreshPlayerInputs(newVal);
         });
-        return playerCountSpinner;
+        return spinner;
     }
 
     // --- Helper UI: Bot Count Spinner ---
     private Spinner<Integer> createBotCountSpinner() {
-        botCountSpinner = new Spinner<>(0, 7, 0);
-        botCountSpinner.setEditable(false);
-        botCountSpinner.setPrefWidth(120);
-        botCountSpinner.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
+        Spinner<Integer> spinner = new Spinner<>(0, 7, 0);
+        spinner.setEditable(false);
+        spinner.setPrefWidth(120);
+        spinner.setStyle(CONTROL_STYLE);
 
         // Event: Refresh UI saat bot count berubah
-        botCountSpinner.valueProperty().addListener((obs, old, newVal) -> {
+        spinner.valueProperty().addListener((obs, old, newVal) -> {
             // Pastikan bot count tidak melebihi total players - 1 (minimal 1 human)
             int maxBots = playerCountSpinner.getValue() - 1;
             if (newVal > maxBots) {
-                botCountSpinner.getValueFactory().setValue(maxBots);
+                spinner.getValueFactory().setValue(maxBots);
                 return;
             }
             refreshPlayerInputs(playerCountSpinner.getValue());
         });
 
-        return botCountSpinner;
+        return spinner;
     }
 
     // --- Helper UI: Bot Difficulty ComboBox ---
     private ComboBox<Difficulty> createBotDifficultyCombo() {
-        botDifficultyCombo = new ComboBox<>();
-        botDifficultyCombo.getItems().addAll(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD);
-        botDifficultyCombo.setValue(Difficulty.EASY);
-        botDifficultyCombo.setPrefWidth(120);
-        botDifficultyCombo.setStyle("-fx-background-color: #0a0a0a; -fx-text-fill: white; -fx-border-color: #444444; -fx-border-width: 3; -fx-border-radius: 0;");
-        return botDifficultyCombo;
+        ComboBox<Difficulty> combo = new ComboBox<>();
+        combo.getItems().addAll(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD);
+        combo.setValue(Difficulty.EASY);
+        combo.setPrefWidth(120);
+        combo.setStyle(CONTROL_STYLE);
+        return combo;
     }
 
     // --- Helper UI: Styled Button ---
     private Button createStyledButton(String text, Color baseColor, Runnable action) {
         Button btn = new Button(text);
-        btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        btn.setFont(Font.font(FONT_FAMILY, FontWeight.BOLD, 14));
         btn.setPrefWidth(150);
         btn.setPrefHeight(40);
 
@@ -315,31 +332,6 @@ public class SetupView extends StackPane {
             }
         }
         onStartGame.accept(new GameConfig(selectedMap, players, botFlags, botDifficulty));
-    }
-
-    // --- Background Animation (Sama dgn Menu) ---
-    private void createFloatingAtoms(Pane pane) {
-        Random rand = new Random();
-        List<Circle> atoms = new ArrayList<>();
-        Color[] colors = { Color.RED, Color.CYAN, Color.LIME, Color.YELLOW };
-
-        for (int i = 0; i < 20; i++) {
-            Circle c = new Circle(rand.nextInt(4) + 2, colors[rand.nextInt(4)]);
-            c.setOpacity(0.2);
-            c.setTranslateX(rand.nextInt(800));
-            c.setTranslateY(rand.nextInt(600));
-            pane.getChildren().add(c);
-            atoms.add(c);
-        }
-        new AnimationTimer() {
-            public void handle(long now) {
-                for (Circle c : atoms) {
-                    c.setTranslateY(c.getTranslateY() - 0.3);
-                    if (c.getTranslateY() < 0)
-                        c.setTranslateY(pane.getHeight() + 10);
-                }
-            }
-        }.start();
     }
 
     private String toHexString(Color c) {

@@ -7,9 +7,10 @@ import com.silent.treatment.chainreaction.model.MapType;
 import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class GameManager {
-    private static GameManager instance;
+    private static final Logger logger = Logger.getLogger(GameManager.class.getName());
 
     private Board board;
     private List<Player> players;
@@ -30,11 +31,13 @@ public class GameManager {
     private GameManager() {
     }
 
+    // Bill Pugh Singleton pattern - thread-safe lazy initialization
+    private static class SingletonHolder {
+        private static final GameManager INSTANCE = new GameManager();
+    }
+
     public static GameManager getInstance() {
-        if (instance == null) {
-            instance = new GameManager();
-        }
-        return instance;
+        return SingletonHolder.INSTANCE;
     }
 
     public void initializeGame(MapType mapType, List<Player> customPlayers) {
@@ -65,13 +68,19 @@ public class GameManager {
     }
 
     public void nextTurn() {
-        if (isGameOver) return;
+        if (isGameOver)
+            return;
 
         totalTurns++;
+
+        if (players == null || players.isEmpty()) {
+            return;
+        }
+
         log("\n[TURN] Ending turn for " + getCurrentPlayer().getName());
 
         int attempts = 0;
-        
+
         // Cari pemain berikutnya yang masih Alive
         do {
             currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
@@ -88,7 +97,8 @@ public class GameManager {
     }
 
     public void checkEliminations() {
-        if (isGameOver) return;
+        if (isGameOver)
+            return;
 
         log("[CHECK] Checking eliminations...");
 
@@ -103,18 +113,19 @@ public class GameManager {
             // 2. Jumlah Orb pemain tersebut 0
             if (p.hasPlayed()) {
                 int orbCount = getPlayerOrbCount(p);
-                
+
                 if (orbCount == 0) {
                     p.setAlive(false);
                     // Kita tetap print info penting ini meskipun DEBUG_MODE false
-                    System.out.println("!!! ELIMINATION !!! " + p.getName() + " has been ELIMINATED!");
+                    logger.warning(() -> "!!! ELIMINATION !!! " + p.getName() + " has been ELIMINATED!");
                 }
             }
         }
     }
 
     public Player checkWinner() {
-        if (isGameOver) return winner;
+        if (isGameOver)
+            return winner;
 
         int activePlayers = 0;
         Player potentialWinner = null;
@@ -142,15 +153,15 @@ public class GameManager {
 
         // Kondisi LOSE: semua pemain human mati tetapi masih ada bot hidup
         if (!anyHumanAlive && anyBotAlive && !humansDefeated) {
-            humansDefeated = true;          // status permanen
-            humansDefeatedSignal = true;    // sinyal satu kali untuk UI
+            humansDefeated = true; // status permanen
+            humansDefeatedSignal = true; // sinyal satu kali untuk UI
         }
 
         // Kondisi menang normal: hanya 1 pemain (human atau bot) yang tersisa
         if (activePlayers == 1) {
             this.isGameOver = true;
             this.winner = potentialWinner;
-            System.out.println("GAME OVER! Winner: " + winner.getName());
+            logger.info(() -> "GAME OVER! Winner: " + winner.getName());
             return winner;
         }
 
@@ -162,7 +173,8 @@ public class GameManager {
      * Semua pemain dengan nama yang mengandung "AI Bot" dianggap bot.
      */
     private boolean isBotPlayer(Player p) {
-        if (p == null || p.getName() == null) return false;
+        if (p == null || p.getName() == null)
+            return false;
         return p.getName().toLowerCase().contains("ai bot");
     }
 
@@ -200,7 +212,7 @@ public class GameManager {
 
     private void log(String msg) {
         if (DEBUG_MODE) {
-            System.out.println(msg);
+            logger.info(msg);
         }
     }
 

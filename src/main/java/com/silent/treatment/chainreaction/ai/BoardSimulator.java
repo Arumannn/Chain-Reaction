@@ -34,7 +34,7 @@ public class BoardSimulator {
     }
 
     public static BoardState simulateMove(BoardState state, AIMove move, Player player) {
-        BoardState newState = state.clone();
+        BoardState newState = new BoardState(state); // Use copy constructor
         CellState cell = newState.getCell(move.getX(), move.getY());
 
         if (cell != null) {
@@ -79,6 +79,20 @@ public class BoardSimulator {
             this.height = height;
         }
 
+        // Copy constructor
+        public BoardState(BoardState other) {
+            this.width = other.width;
+            this.height = other.height;
+            this.cells = new CellState[width][height];
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    if (other.cells[x][y] != null) {
+                        this.cells[x][y] = new CellState(other.cells[x][y]);
+                    }
+                }
+            }
+        }
+
         public CellState getCell(int x, int y) {
             if (x >= 0 && x < width && y >= 0 && y < height) {
                 return cells[x][y];
@@ -94,79 +108,83 @@ public class BoardSimulator {
             return height;
         }
 
-        public BoardState clone() {
-            CellState[][] newCells = new CellState[width][height];
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    if (cells[x][y] != null) {
-                        newCells[x][y] = cells[x][y].clone();
-                    }
-                }
-            }
-            return new BoardState(newCells, width, height);
-        }
-
         /**
          * Evaluate board state untuk MULTIPLAYER (2-8 player).
-         * Parameter enemyPlayer diabaikan - aggregate SEMUA non-AI players.
+         * Aggregates ALL non-AI players as enemies.
          */
-        public double evaluate(Player aiPlayer, Player enemyPlayer) {
-            double score = 0;
+        public double evaluate(Player aiPlayer) {
             int aiOrbs = 0;
-            int totalEnemyOrbs = 0; // Aggregate ALL enemies (not just one)
+            int totalEnemyOrbs = 0;
             int aiCells = 0;
-            int totalEnemyCells = 0; // Aggregate ALL enemies (not just one)
+            int totalEnemyCells = 0;
+            double score = 0;
 
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     CellState cell = cells[x][y];
-                    if (cell == null || cell.owner == null)
+                    if (cell == null || cell.owner == null) {
                         continue;
+                    }
 
                     if (cell.owner.equals(aiPlayer)) {
+                        score += evaluateAICell(cell);
                         aiOrbs += cell.orbs;
                         aiCells++;
-
-                        if (cell.orbs == cell.criticalMass - 1) {
-                            score += 15.0;
-                        }
-
-                        if (cell.criticalMass == 2)
-                            score += 5.0;
-                        else if (cell.criticalMass == 3)
-                            score += 3.0;
-
                     } else {
-                        // ✅ ANY non-AI player = enemy (support 2-8 players)
+                        score += evaluateEnemyCell(cell);
                         totalEnemyOrbs += cell.orbs;
                         totalEnemyCells++;
-
-                        if (cell.orbs == cell.criticalMass - 1) {
-                            score -= 15.0; // Threat dari musuh MANAPUN
-                        }
                     }
                 }
             }
 
-            // Score = AI dominance vs COLLECTIVE enemy strength
-            score += (aiOrbs - totalEnemyOrbs) * 10.0;
-            score += (aiCells - totalEnemyCells) * 5.0;
-
-            // Win/lose conditions
-            if (totalEnemyOrbs == 0 && totalEnemyCells == 0) {
-                score += 10000.0; // AI won (all enemies eliminated)
-            } else if (aiOrbs == 0 && aiCells == 0) {
-                score -= 10000.0; // AI lost
-            }
+            score += calculateDominanceScore(aiOrbs, totalEnemyOrbs, aiCells, totalEnemyCells);
+            score += calculateWinLoseBonus(aiOrbs, aiCells, totalEnemyOrbs, totalEnemyCells);
 
             return score;
+        }
+
+        private double evaluateAICell(CellState cell) {
+            double cellScore = 0;
+
+            if (cell.orbs == cell.criticalMass - 1) {
+                cellScore += 15.0;
+            }
+
+            if (cell.criticalMass == 2) {
+                cellScore += 5.0;
+            } else if (cell.criticalMass == 3) {
+                cellScore += 3.0;
+            }
+
+            return cellScore;
+        }
+
+        private double evaluateEnemyCell(CellState cell) {
+            if (cell.orbs == cell.criticalMass - 1) {
+                return -15.0; // Threat from any enemy
+            }
+            return 0;
+        }
+
+        private double calculateDominanceScore(int aiOrbs, int enemyOrbs, int aiCells, int enemyCells) {
+            return (aiOrbs - enemyOrbs) * 10.0 + (aiCells - enemyCells) * 5.0;
+        }
+
+        private double calculateWinLoseBonus(int aiOrbs, int aiCells, int enemyOrbs, int enemyCells) {
+            if (enemyOrbs == 0 && enemyCells == 0) {
+                return 10000.0; // AI won (all enemies eliminated)
+            } else if (aiOrbs == 0 && aiCells == 0) {
+                return -10000.0; // AI lost
+            }
+            return 0;
         }
     }
 
     public static class CellState {
-        public int orbs;
-        public Player owner;
-        public int criticalMass;
+        int orbs;
+        Player owner;
+        int criticalMass;
 
         public CellState(int orbs, Player owner, int criticalMass) {
             this.orbs = orbs;
@@ -174,8 +192,24 @@ public class BoardSimulator {
             this.criticalMass = criticalMass;
         }
 
-        public CellState clone() {
-            return new CellState(orbs, owner, criticalMass);
+        // Copy constructor
+        public CellState(CellState other) {
+            this.orbs = other.orbs;
+            this.owner = other.owner;
+            this.criticalMass = other.criticalMass;
         }
+
+        public int getOrbs() {
+            return orbs;
+        }
+
+        public Player getOwner() {
+            return owner;
+        }
+
+        public int getCriticalMass() {
+            return criticalMass;
+        }
+
     }
 }

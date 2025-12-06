@@ -6,6 +6,7 @@ import com.silent.treatment.chainreaction.model.Cell;
 import com.silent.treatment.chainreaction.model.Player;
 import com.silent.treatment.chainreaction.model.Board;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,26 +24,36 @@ public class TutorialController extends GameController {
 
     private Phase currentPhase;
     private boolean isProcessing;
+    private final Random random;
+    private PauseTransition currentTransition; // Track active transition
 
     private final Consumer<String> instructionCallback;
-    private final Runnable onFinishCallback;
     private Runnable onTurnChanged;
     private Runnable onGameOver;
 
     public TutorialController(Consumer<String> instructionCallback, Runnable onFinishCallback) {
         // Disable GameController's auto-turn logic for tutorial to prevent double turns
-        ExplosionQueue.getInstance().setOnQueueEmpty(null);
+        ExplosionQueue.getInstance().setOnQueueEmpty(this::checkTutorialAnimationStatus);
 
         this.instructionCallback = instructionCallback;
-        this.onFinishCallback = onFinishCallback;
         this.currentPhase = Phase.DEMO_2_EXPLOSION;
         this.isProcessing = true;
+        this.random = new Random();
 
         this.onGameOver = onFinishCallback;
 
-        PauseTransition startDelay = new PauseTransition(Duration.seconds(1));
-        startDelay.setOnFinished(e -> startDemoPhase());
-        startDelay.play();
+        this.currentTransition = new PauseTransition(Duration.seconds(1));
+        this.currentTransition.setOnFinished(e -> startDemoPhase());
+        this.currentTransition.play();
+    }
+
+    public void stop() {
+        if (currentTransition != null) {
+            currentTransition.stop();
+            currentTransition = null;
+        }
+        // Force reset isProcessing agar UI tidak terkunci jika masuk tutorial lagi
+        isProcessing = false;
     }
 
     @Override
@@ -71,6 +82,8 @@ public class TutorialController extends GameController {
             case DEMO_4_EXPLOSION:
                 instructionCallback.accept("DEMO 3: LEDAKAN TENGAH (kapasitas 4)");
                 demo4Explosion(demoPlayer);
+                break;
+            default:
                 break;
         }
     }
@@ -102,15 +115,13 @@ public class TutorialController extends GameController {
             return;
         }
 
-        executeDelayedMove(target, player, 1.0, false, () -> {
+        executeDelayedMove(target, player, 1.0, false, () -> executeDelayedMove(target, player, 1.0, false, () -> {
+            instructionCallback.accept("Orb 3/3... Siap meledak!");
             executeDelayedMove(target, player, 1.0, false, () -> {
-                instructionCallback.accept("Orb 3/3... Siap meledak!");
-                executeDelayedMove(target, player, 1.0, false, () -> {
-                    instructionCallback.accept("💥 LEDAKAN 3 ARAH! Menyebar ke 3 arah.");
-                    transitionToNextPhase(4.0);
-                });
+                instructionCallback.accept("💥 LEDAKAN 3 ARAH! Menyebar ke 3 arah.");
+                transitionToNextPhase(4.0);
             });
-        });
+        }));
     }
 
     private void demo4Explosion(Player player) {
@@ -122,22 +133,19 @@ public class TutorialController extends GameController {
             return;
         }
 
-        executeDelayedMove(target, player, 0.8, false, () -> {
-            executeDelayedMove(target, player, 0.8, false, () -> {
-                executeDelayedMove(target, player, 0.8, false, () -> {
+        executeDelayedMove(target, player, 0.8, false, () -> executeDelayedMove(target, player, 0.8, false,
+                () -> executeDelayedMove(target, player, 0.8, false, () -> {
                     instructionCallback.accept("Orb 4/4... KRITIS!");
                     executeDelayedMove(target, player, 0.8, false, () -> {
                         instructionCallback.accept("💥💥 LEDAKAN MAKSIMAL! Meledak ke SEMUA 4 arah!");
                         transitionToNextPhase(5.0);
                     });
-                });
-            });
-        });
+                })));
     }
 
     private void transitionToNextPhase(double delay) {
-        PauseTransition transition = new PauseTransition(Duration.seconds(delay));
-        transition.setOnFinished(e -> {
+        currentTransition = new PauseTransition(Duration.seconds(delay));
+        currentTransition.setOnFinished(e -> {
             resetBoardData();
             if (onTurnChanged != null)
                 onTurnChanged.run();
@@ -157,9 +165,11 @@ public class TutorialController extends GameController {
                     currentPhase = Phase.INTERACTIVE_NOOB;
                     startInteractiveMode();
                     break;
+                default:
+                    break;
             }
         });
-        transition.play();
+        currentTransition.play();
     }
 
     private void resetBoardData() {
@@ -179,6 +189,52 @@ public class TutorialController extends GameController {
         instructionCallback.accept(
                 "🎮 MODE LATIHAN\n\nGiliranmu! Kalahkan AI.\n(AI di mode ini sangat lemah, manfaatkan untuk belajar menang)");
         isProcessing = false;
+        // Make sure queue is empty and listener is ready
+        if (ExplosionQueue.getInstance().peekNext() == null) {
+            ExplosionQueue.getInstance().setOnQueueEmpty(this::checkTutorialAnimationStatus);
+        }
+
+        // Ensure UI reflects the starting player (YOU)
+        if (onTurnChanged != null)
+            onTurnChanged.run();
+    }
+
+    private void checkTutorialAnimationStatus() {
+        if (currentPhase != Phase.INTERACTIVE_NOOB)
+            return;
+
+        Platform.runLater(() -> {
+            if (checkGameEnd())
+                return;
+
+            GameManager gm = GameManager.getInstance();
+            Player currentPlayer = gm.getCurrentPlayer();
+
+            // If it is now AI's turn (Index 1), it means User just finished
+            // moving/exploding
+            if (gm.getPlayers().indexOf(currentPlayer) == 1) {
+                // FORCE UI UPDATE: Ensure color changes to AI's color
+                if (onTurnChanged != null)
+                    onTurnChanged.run();
+                scheduleAIMove();
+            }
+            // If it is now User's turn (Index 0), it means AI just finished
+            // moving/exploding
+            else if (gm.getPlayers().indexOf(currentPlayer) == 0) {
+                isProcessing = false;
+                // FORCE UI UPDATE: Ensure color changes to User's color
+                if (onTurnChanged != null)
+                    onTurnChanged.run();
+                instructionCallback.accept("Giliranmu! Klik untuk menyerang.");
+            }
+        });
+    }
+
+    private void scheduleAIMove() {
+        instructionCallback.accept("AI sedang berpikir...");
+        currentTransition = new PauseTransition(Duration.seconds(1.0));
+        currentTransition.setOnFinished(e -> performNoobAIMove());
+        currentTransition.play();
     }
 
     @Override
@@ -197,35 +253,41 @@ public class TutorialController extends GameController {
         isProcessing = true;
         processMove(cell, human, true);
 
+        // If explosion started, wait for checkTutorialAnimationStatus
+        if (ExplosionQueue.getInstance().isProcessing()) {
+            return;
+        }
+
+        // If no explosion, trigger AI manually
         if (checkGameEnd())
             return;
-
-        instructionCallback.accept("AI sedang berpikir...");
-        PauseTransition aiThink = new PauseTransition(Duration.seconds(1.0));
-        aiThink.setOnFinished(e -> {
-            performNoobAIMove();
-            isProcessing = false;
-        });
-        aiThink.play();
+        scheduleAIMove();
     }
 
     private void performNoobAIMove() {
         GameManager gm = GameManager.getInstance();
         Player aiPlayer = gm.getPlayers().get(1);
-        Player humanPlayer = gm.getPlayers().get(0);
 
-        Cell worstMove = findWorstMove(gm.getBoard(), aiPlayer, humanPlayer);
+        Cell worstMove = findWorstMove(gm.getBoard(), aiPlayer);
 
         if (worstMove != null) {
             final Cell finalTarget = worstMove;
-            PauseTransition moveDelay = new PauseTransition(Duration.seconds(0.8));
-            moveDelay.setOnFinished(e -> {
+            currentTransition = new PauseTransition(Duration.seconds(0.8));
+            currentTransition.setOnFinished(e -> {
                 processMove(finalTarget, aiPlayer, true);
+
+                // If explosion started, wait for callback to unlock UI
+                if (ExplosionQueue.getInstance().isProcessing()) {
+                    return;
+                }
+
+                // If no explosion, unlock UI manually
                 if (!checkGameEnd()) {
+                    isProcessing = false;
                     instructionCallback.accept("Giliranmu! Klik untuk menyerang.");
                 }
             });
-            moveDelay.play();
+            currentTransition.play();
         }
     }
 
@@ -262,17 +324,17 @@ public class TutorialController extends GameController {
 
             instructionCallback.accept(msg);
 
-            PauseTransition delay = new PauseTransition(Duration.seconds(2));
-            delay.setOnFinished(e -> onGameOver.run());
-            delay.play();
+            instructionCallback.accept(msg);
+
+            currentTransition = new PauseTransition(Duration.seconds(2));
+            currentTransition.setOnFinished(e -> onGameOver.run());
+            currentTransition.play();
             return true;
         }
         return false;
     }
 
-    private Cell findWorstMove(Board board, Player ai, Player human) {
-
-        Random rand = new Random();
+    private Cell findWorstMove(Board board, Player ai) {
         List<Cell> legalMoves = new ArrayList<>();
 
         for (int i = 0; i < board.getWidth(); i++) {
@@ -288,18 +350,18 @@ public class TutorialController extends GameController {
         if (legalMoves.isEmpty())
             return null;
 
-        return legalMoves.get(rand.nextInt(legalMoves.size()));
+        return legalMoves.get(random.nextInt(legalMoves.size()));
     }
 
     private void executeDelayedMove(Cell cell, Player player, double delaySeconds, boolean advanceTurn,
             Runnable onComplete) {
-        PauseTransition pause = new PauseTransition(Duration.seconds(delaySeconds));
-        pause.setOnFinished(e -> {
+        currentTransition = new PauseTransition(Duration.seconds(delaySeconds));
+        currentTransition.setOnFinished(e -> {
             processMove(cell, player, advanceTurn);
             if (onComplete != null) {
                 onComplete.run();
             }
         });
-        pause.play();
+        currentTransition.play();
     }
 }
